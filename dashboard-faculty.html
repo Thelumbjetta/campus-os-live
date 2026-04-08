@@ -9,6 +9,26 @@
     body { background-color: var(--white); }
     .top-section { background: var(--bg-light); border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; padding-bottom: 20px; margin-bottom: 30px; }
     .hero-panel { display: flex; justify-content: space-between; align-items: center; padding: 40px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 30px; }
+    
+    /* Attendance Register Styles */
+    .att-student-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); transition: background 0.2s; }
+    .att-student-row:last-child { border-bottom: none; }
+    .att-student-row:hover { background: rgba(0,0,0,0.02); }
+    .att-status-toggle { display: flex; gap: 6px; }
+    .att-btn { padding: 6px 14px; border-radius: 20px; border: 1.5px solid rgba(0,0,0,0.15); background: transparent; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+    .att-btn.p { background: var(--neon-green); border-color: var(--neon-green); color: #000; }
+    .att-btn.a { background: #FF4D4D; border-color: #FF4D4D; color: #fff; }
+    .att-btn.l { background: var(--purple); border-color: var(--purple); color: #fff; }
+    .bulk-actions { display: flex; gap: 10px; padding: 15px 20px; background: var(--bg-light); border-radius: var(--radius-lg); margin-bottom: 15px; align-items: center; flex-wrap: wrap; }
+    
+    /* Q&A Thread Styles */
+    .query-card { padding: 20px; border-radius: var(--radius-lg); border: 1.5px solid rgba(0,0,0,0.08); margin-bottom: 15px; background: var(--white); transition: all 0.2s; }
+    .query-card:hover { border-color: var(--purple); box-shadow: 0 4px 20px rgba(183,132,245,0.1); }
+    .query-card.resolved { opacity: 0.65; }
+    
+    /* History table */
+    .att-hist-row { display: grid; grid-template-columns: 120px 1fr 80px 100px; gap:10px; padding: 10px 15px; border-bottom: 1px solid rgba(0,0,0,0.05); align-items:center; font-size:0.9rem; }
+    .att-hist-header { font-weight:700; opacity:0.5; font-size:0.8rem; text-transform:uppercase; }
   </style>
 </head>
 <body>
@@ -24,58 +44,89 @@
         <button class="nav-pill" onclick="logout()" style="background:var(--black); color:var(--white); box-shadow:none;">Logout</button>
       </div>
     </nav>
-
     <div class="container stagger-up d-2" style="margin-top:20px;">
       <div class="filter-ribbon">
-        <button class="filter-btn active" data-view="overview" onclick="switchView('overview')">Schedule</button>
+        <button class="filter-btn active" data-view="overview" onclick="switchView('overview')">My Schedule</button>
+        <button class="filter-btn" data-view="manage" onclick="switchView('manage')">Manage Schedule</button>
         <button class="filter-btn" data-view="queries" onclick="switchView('queries')">Student Q&A</button>
-        <button class="filter-btn" data-view="attendance" onclick="switchView('attendance')">Registry</button>
+        <button class="filter-btn" data-view="attendance" onclick="switchView('attendance')">Take Attendance</button>
+        <button class="filter-btn" data-view="history" onclick="switchView('history')">Att. History</button>
         <button class="filter-btn" data-view="blueprint" onclick="switchView('blueprint')">Campus Map</button>
       </div>
     </div>
   </div>
 
   <div class="container stagger-up d-4">
-      <div id="canvas" class="dashboard-canvas"></div>
+    <div id="canvas" class="dashboard-canvas"></div>
   </div>
 
   <!-- Query Reply Modal -->
   <div class="module-modal" id="modal-reply">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('modal-reply')">✕</button>
-      <h2 class="text-headline" style="margin-bottom:30px;">DISPATCH RESPONSE</h2>
+      <h2 class="text-headline" style="margin-bottom:10px;">STUDENT QUERY</h2>
       <input type="hidden" id="qr-id">
       
-      <div class="thread-msg" style="background:var(--bg-light); border:1px solid rgba(0,0,0,0.05); margin-bottom:20px;">
-        <div class="thread-meta" id="qr-meta"></div>
-        <div class="thread-body" id="qr-q" style="font-weight:700;"></div>
+      <div style="background:var(--bg-light); border-radius:var(--radius-lg); padding:20px; margin-bottom:20px;">
+        <p id="qr-meta" style="font-size:0.85rem; font-weight:700; opacity:0.5; margin-bottom:8px; text-transform:uppercase;"></p>
+        <p id="qr-student" style="font-weight:700; font-size:0.95rem; margin-bottom:10px;"></p>
+        <p id="qr-q" style="font-size:1.1rem; font-weight:600; line-height:1.5;"></p>
       </div>
       
-      <input id="qr-resp" class="form-input" placeholder="Transmit precise answer..." type="text">
+      <label style="font-weight:700; display:block; margin-bottom:8px;">Your Answer</label>
+      <textarea id="qr-resp" class="form-input" placeholder="Write your precise answer here..." style="height:120px; resize:vertical;"></textarea>
       <button class="massive-btn" onclick="submitReply()">Submit Answer</button>
     </div>
   </div>
 
-  <!-- Attendance Modal -->
-  <div class="module-modal" id="modal-att">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('modal-att')">✕</button>
-      <h2 class="text-headline" style="margin-bottom:30px;">LODGE REGISTER</h2>
-      <p style="margin-bottom:20px; opacity:0.6;">Use valid system Student ID (e.g. 101, 102)</p>
-      
-      <input id="att-course" class="form-input" placeholder="Course Code (e.g. CS101)" type="text">
-      <input id="att-student" class="form-input" placeholder="Student ID" type="number">
-      <select id="att-status" class="form-input">
-        <option value="Present">Present</option><option value="Absent">Absent</option>
-      </select>
-      
-      <button class="massive-btn" style="background:var(--black);" onclick="submitAttendance()">Mark Attendance</button>
+  <!-- Class Editor Modal (Add / Edit timetable slot) -->
+  <div class="module-modal" id="modal-class-editor">
+    <div class="modal-content" style="max-width:540px;">
+      <button class="close-btn" onclick="closeModal('modal-class-editor')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:6px; font-size:1.8rem;" id="ce-title">ADD CLASS</h2>
+      <p style="opacity:0.5; margin-bottom:25px; font-size:0.9rem;">Changes reflect immediately in student timetables.</p>
+      <input type="hidden" id="ce-id">
+
+      <label style="font-weight:700; font-size:0.85rem; display:block; margin-bottom:6px;">Course</label>
+      <select id="ce-course" class="form-input"></select>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+        <div>
+          <label style="font-weight:700; font-size:0.85rem; display:block; margin-bottom:6px;">Day</label>
+          <select id="ce-day" class="form-input" style="margin:0;">
+            <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+            <option>Thursday</option><option>Friday</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-weight:700; font-size:0.85rem; display:block; margin-bottom:6px;">Period No.</label>
+          <input id="ce-period" type="number" min="1" max="8" class="form-input" style="margin:0;" placeholder="e.g. 1">
+        </div>
+        <div>
+          <label style="font-weight:700; font-size:0.85rem; display:block; margin-bottom:6px;">Start Time</label>
+          <input id="ce-start" type="time" class="form-input" style="margin:0;">
+        </div>
+        <div>
+          <label style="font-weight:700; font-size:0.85rem; display:block; margin-bottom:6px;">End Time</label>
+          <input id="ce-end" type="time" class="form-input" style="margin:0;">
+        </div>
+      </div>
+      <label style="font-weight:700; font-size:0.85rem; display:block; margin:15px 0 6px;">Classroom / Venue</label>
+      <input id="ce-room" type="text" class="form-input" placeholder="e.g. LH-101, Lab-A">
+      <label style="font-weight:700; font-size:0.85rem; display:block; margin-bottom:6px;">Section</label>
+      <input id="ce-section" type="text" class="form-input" placeholder="e.g. CS-A, EC-B">
+
+      <div id="ce-error" style="color:#EF476F; font-size:0.9rem; margin-bottom:10px; display:none;"></div>
+      <button class="massive-btn" onclick="saveClass()">Save Class &rarr;</button>
     </div>
   </div>
 
   <script>
     const API = '/api';
     let session = null, facultyId = null;
+    let myCourses = [];       // courses taught by this faculty member
+    let myTimetable = [];     // this faculty's timetable entries
+    let allStudents = [];     // all students for attendance
 
     function openModal(i) { document.getElementById(i).classList.add('open'); }
     function closeModal(i) { document.getElementById(i).classList.remove('open'); }
@@ -94,6 +145,19 @@
       if (!session || session.role !== 'faculty') { window.location.href = 'index.html'; return; }
       facultyId = session.profile?.faculty_id;
       document.getElementById('lbl-name').textContent = session.name;
+
+      // Prefetch faculty's courses and timetable in parallel
+      try {
+        const [courses, timetable, students] = await Promise.all([
+          fetch(`${API}/faculty/${facultyId}/courses`).then(r=>r.json()),
+          fetch(`${API}/timetable?faculty_id=${facultyId}`).then(r=>r.json()),
+          fetch(`${API}/students`).then(r=>r.json())
+        ]);
+        myCourses = courses || [];
+        myTimetable = timetable || [];
+        allStudents = students || [];
+      } catch(e) { console.error('Prefetch failed:', e); }
+
       await renderOverview();
     };
 
@@ -103,133 +167,558 @@
       const canvas = document.getElementById('canvas');
       canvas.style.opacity = 0;
       setTimeout(async () => {
-        if(viewName==='overview') await renderOverview();
-        if(viewName==='queries') await renderQueries();
-        if(viewName==='attendance') await renderAttendance();
-        if(viewName==='blueprint') await renderBlueprint();
+        if(viewName==='overview')    await renderOverview();
+        if(viewName==='manage')      await renderManageSchedule();
+        if(viewName==='queries')     await renderQueries();
+        if(viewName==='attendance')  await renderAttendance();
+        if(viewName==='history')     await renderAttendanceHistory();
+        if(viewName==='blueprint')   await renderBlueprint();
         canvas.style.opacity = 1;
       }, 300);
     }
 
-    // 1. Schedule
-    async function renderOverview() {
-      const html = `<div class="hero-panel"><div><p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Instructor Mode</p><h1 class="text-headline" style="font-size:3rem;">Master Schedule</h1></div></div>
-      <div class="grid-masonry" style="padding:0;">
-          <div class="poster-card poster-blue" id="box-tt" style="grid-column: 1/-1; padding:40px;">Loading...</div>
-      </div>`;
-      document.getElementById('canvas').innerHTML = html;
+    // ── 1b. MANAGE SCHEDULE ──────────────────────────────────────────────────
+    async function renderManageSchedule() {
+      // Refresh timetable from server
       try {
-         const r = await fetch(`${API}/timetable?section=CS-A`); const data = await r.json();
-         const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-         let ttMega = '';
-         days.forEach(day => {
-            const classes = data.filter(x => x.day_of_week === day).sort((a,b)=>a.period_no-b.period_no);
-            ttMega += `<div style="margin-top:20px;"><div class="badge" style="background:rgba(255,255,255,0.2); color:#FFF; margin-bottom:10px; display:inline-block;">${day.toUpperCase()}</div>`;
-            if(!classes.length) ttMega += `<div class="fluid-row" style="border-bottom-color:rgba(255,255,255,0.2);"><span class="fluid-row-label">No classes</span></div>`;
-            classes.forEach(c => ttMega += `<div class="fluid-row" style="border-bottom-color:rgba(255,255,255,0.2);"><span class="fluid-row-label">${c.start_time} - ${c.end_time}</span><span class="fluid-row-val">${c.course_code} (${c.classroom})</span></div>`);
-            ttMega += `</div>`;
-         });
-         document.getElementById('box-tt').innerHTML = `<h3 class="text-headline">Weekly Routine</h3><div style="column-count: 2; column-gap: 40px; margin-top:30px;">${ttMega}</div>`;
+        myTimetable = await fetch(`${API}/timetable?faculty_id=${facultyId}`).then(r=>r.json());
+        myCourses   = await fetch(`${API}/faculty/${facultyId}/courses`).then(r=>r.json());
       } catch(e){}
+
+      const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+      let html = `
+        <div class="poster-card" style="padding:40px;">
+          <div class="poster-header" style="margin-bottom:30px;">
+            <div>
+              <h3 class="text-headline" style="font-size:2rem;">Manage My Schedule</h3>
+              <p style="opacity:0.5; margin-top:6px;">Add, reschedule, or remove classes. Changes reflect in student timetables instantly.</p>
+            </div>
+            <button class="nav-pill" style="background:var(--purple); color:white; border:none; white-space:nowrap;" onclick="openAddClass()">+ Add Class</button>
+          </div>`;
+
+      if (!myTimetable.length) {
+        html += `<div style="text-align:center; opacity:0.5; padding:40px;">No classes scheduled yet. Click + Add Class to get started.</div>`;
+      } else {
+        days.forEach(day => {
+          const classes = myTimetable.filter(x => x.day_of_week === day).sort((a,b) => a.period_no - b.period_no);
+          if (!classes.length) return;
+          const todayStr = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
+          html += `<div style="margin-bottom:28px;">
+            <div class="badge" style="background:${day===todayStr?'var(--neon-green)':'var(--bg-light)'}; margin-bottom:12px;">${day.toUpperCase()}${day===todayStr?' ✦ TODAY':''}</div>`;
+          classes.forEach(c => {
+            html += `<div style="display:grid; grid-template-columns:1fr auto; align-items:center; gap:15px; padding:16px 20px; border:1.5px solid rgba(0,0,0,0.07); border-radius:var(--radius-md); margin-bottom:10px; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='rgba(0,0,0,0.07)'">
+              <div>
+                <p style="font-weight:700; font-size:1rem;">${c.course_code} — ${c.course_name}</p>
+                <p style="opacity:0.5; font-size:0.85rem; margin-top:3px;">Period ${c.period_no} &nbsp;·&nbsp; ${c.start_time}–${c.end_time} &nbsp;·&nbsp; ${c.classroom} &nbsp;·&nbsp; Section ${c.section}</p>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button onclick='openEditClass(${JSON.stringify(c)})'
+                  style="padding:8px 16px; border-radius:var(--radius-pill); border:1.5px solid rgba(0,0,0,0.12); background:white; font-weight:600; cursor:pointer; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='rgba(0,0,0,0.12)'">Edit</button>
+                <button onclick="deleteClass(${c.timetable_id})"
+                  style="padding:8px 16px; border-radius:var(--radius-pill); border:1.5px solid rgba(239,71,111,0.3); background:rgba(239,71,111,0.05); color:#EF476F; font-weight:700; cursor:pointer; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.background='#EF476F'; this.style.color='white'" onmouseout="this.style.background='rgba(239,71,111,0.05)'; this.style.color='#EF476F'">Remove</button>
+              </div>
+            </div>`;
+          });
+          html += `</div>`;
+        });
+      }
+      html += `</div>`;
+      document.getElementById('canvas').innerHTML = html;
     }
 
-    // 2. Q&A 
-    async function renderQueries() {
-      let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card" id="box-q" style="grid-column: 1/-1;">Loading...</div></div>`;
-      document.getElementById('canvas').innerHTML = html;
-      try {
-         const r = await fetch(`${API}/queries`); const queries = await r.json();
-         const myQ = queries.filter(q => q.faculty_id === facultyId);
-         let h = `<div class="poster-header"><h3 class="poster-title text-headline">Student Questions</h3></div><div class="poster-content" style="margin-top:30px;">`;
-         if(!myQ.length) h += '<p style="opacity:0.6;">No pending queries.</p>';
-         myQ.forEach(q => {
-            h += `<div class="fluid-row" style="cursor:pointer;" onclick='replyQuery(${JSON.stringify(q)})'>
-               <div style="display:flex; flex-direction:column; gap:5px; max-width:70%;">
-                 <span class="fluid-row-val">${q.question}</span><span class="fluid-row-label" style="opacity:0.6;">Course: ${q.course_name}</span>
-               </div>
-               <span class="badge" style="${q.status==='answered'?'background:var(--neon-green);':'background:var(--purple); color:var(--white);'};">${q.status.toUpperCase()}</span>
+    function openAddClass() {
+      document.getElementById('ce-title').textContent = 'ADD CLASS';
+      document.getElementById('ce-id').value = '';
+      // Populate course selector
+      const sel = document.getElementById('ce-course');
+      sel.innerHTML = myCourses.map(c => `<option value="${c.course_id}">${c.course_code} — ${c.course_name} (${c.section})</option>`).join('');
+      document.getElementById('ce-day').value = 'Monday';
+      document.getElementById('ce-period').value = '';
+      document.getElementById('ce-start').value = '';
+      document.getElementById('ce-end').value = '';
+      document.getElementById('ce-room').value = '';
+      document.getElementById('ce-section').value = myCourses[0]?.section || '';
+      document.getElementById('ce-error').style.display = 'none';
+      openModal('modal-class-editor');
+    }
+
+    function openEditClass(c) {
+      document.getElementById('ce-title').textContent = 'EDIT CLASS';
+      document.getElementById('ce-id').value = c.timetable_id;
+      const sel = document.getElementById('ce-course');
+      sel.innerHTML = myCourses.map(mc => `<option value="${mc.course_id}" ${mc.course_id===c.course_id?'selected':''}>${mc.course_code} — ${mc.course_name} (${mc.section})</option>`).join('');
+      document.getElementById('ce-day').value    = c.day_of_week;
+      document.getElementById('ce-period').value = c.period_no;
+      document.getElementById('ce-start').value  = c.start_time;
+      document.getElementById('ce-end').value    = c.end_time;
+      document.getElementById('ce-room').value   = c.classroom;
+      document.getElementById('ce-section').value = c.section;
+      document.getElementById('ce-error').style.display = 'none';
+      openModal('modal-class-editor');
+    }
+
+    async function saveClass() {
+      const id       = document.getElementById('ce-id').value;
+      const courseEl = document.getElementById('ce-course');
+      const course_id   = courseEl.value;
+      const day_of_week = document.getElementById('ce-day').value;
+      const period_no   = parseInt(document.getElementById('ce-period').value);
+      const start_time  = document.getElementById('ce-start').value;
+      const end_time    = document.getElementById('ce-end').value;
+      const classroom   = document.getElementById('ce-room').value.trim();
+      const section     = document.getElementById('ce-section').value.trim();
+      const errEl       = document.getElementById('ce-error');
+
+      if (!period_no || !start_time || !end_time || !classroom || !section) {
+        errEl.textContent = 'Please fill in all fields.'; errEl.style.display = 'block'; return;
+      }
+      if (start_time >= end_time) {
+        errEl.textContent = 'End time must be after start time.'; errEl.style.display = 'block'; return;
+      }
+
+      const body = { course_id, faculty_id: facultyId, section, day_of_week, period_no, start_time, end_time, classroom };
+      const url    = id ? `${API}/timetable/${id}` : `${API}/timetable`;
+      const method = id ? 'PUT' : 'POST';
+
+      const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      const d = await r.json();
+      if (!r.ok) {
+        errEl.textContent = d.error || 'Failed to save.'; errEl.style.display = 'block'; return;
+      }
+      closeModal('modal-class-editor');
+      // Refresh timetable data then re-render
+      myTimetable = await fetch(`${API}/timetable?faculty_id=${facultyId}`).then(r=>r.json());
+      renderManageSchedule();
+    }
+
+    async function deleteClass(id) {
+      if (!confirm('Remove this class from the timetable? Students will no longer see it.')) return;
+      const r = await fetch(`${API}/timetable/${id}`, { method:'DELETE' });
+      if (r.ok) {
+        myTimetable = myTimetable.filter(c => c.timetable_id !== id);
+        renderManageSchedule();
+      } else {
+        alert('Failed to remove class.');
+      }
+    }
+
+    // ── 1. MY SCHEDULE (faculty-specific timetable) ──────────────────────────
+    async function renderOverview() {
+      const todayStr = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
+      const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+
+      // Group timetable by day
+      let ttHtml = '';
+      if (!myTimetable.length) {
+        ttHtml = '<p style="opacity:0.6; padding:20px;">No timetable entries found for your faculty ID.</p>';
+      } else {
+        days.forEach(day => {
+          const classes = myTimetable.filter(x => x.day_of_week === day).sort((a,b)=>a.period_no-b.period_no);
+          if (!classes.length) return;
+          ttHtml += `<div style="margin-bottom:25px;">
+            <div class="badge" style="background:${day===todayStr?'var(--neon-green)':'rgba(255,255,255,0.15)'}; color:${day===todayStr?'var(--black)':'var(--white)'}; margin-bottom:12px; display:inline-flex; align-items:center; gap:8px;">
+              ${day===todayStr ? '● ' : ''}${day.toUpperCase()}${day===todayStr?' (TODAY)':''}
             </div>`;
-         });
-         h += `</div>`; document.getElementById('box-q').innerHTML = h;
-      } catch(e){}
+          classes.forEach(c => {
+            ttHtml += `<div class="fluid-row" style="border-bottom-color:rgba(255,255,255,0.12);">
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span class="fluid-row-val" style="font-size:1.1rem;">${c.course_code} — ${c.course_name}</span>
+                <span style="opacity:0.6; font-size:0.85rem;">Period ${c.period_no} · ${c.classroom} · Section ${c.section}</span>
+              </div>
+              <span class="badge" style="background:rgba(255,255,255,0.1); white-space:nowrap;">${c.start_time} – ${c.end_time}</span>
+            </div>`;
+          });
+          ttHtml += `</div>`;
+        });
+      }
+
+      // Courses summary pills
+      let coursePills = myCourses.map(c => `<span class="badge" style="background:rgba(255,255,255,0.15); padding:8px 16px;">${c.course_code} <span style="opacity:0.6;">${c.section}</span></span>`).join('');
+
+      const html = `
+        <div class="hero-panel">
+          <div>
+            <p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Instructor Portal</p>
+            <h1 class="text-headline" style="font-size:3rem;">My Teaching Schedule</h1>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; max-width:300px; justify-content:flex-end;">${coursePills || '<span style="opacity:0.5;">No courses assigned</span>'}</div>
+        </div>
+        <div class="grid-masonry" style="padding:0;">
+          <div class="poster-card poster-blue" style="grid-column:1/-1; padding:40px;">
+            <div class="poster-header">
+              <h3 class="text-headline" style="font-size:1.8rem;">Weekly Timetable</h3>
+              <span class="badge" style="background:rgba(255,255,255,0.2);">${myTimetable.length} Periods / Week</span>
+            </div>
+            <div style="margin-top:30px; column-count:2; column-gap:40px;">${ttHtml}</div>
+          </div>
+        </div>`;
+      document.getElementById('canvas').innerHTML = html;
+    }
+
+    // ── 2. STUDENT Q&A ───────────────────────────────────────────────────────
+    async function renderQueries() {
+      document.getElementById('canvas').innerHTML = `<div class="poster-card" id="box-q" style="padding:40px;">Loading queries...</div>`;
+      try {
+        const r = await fetch(`${API}/queries?faculty_id=${facultyId}`);
+        const queries = await r.json();
+        
+        const open = queries.filter(q => q.status === 'open');
+        const resolved = queries.filter(q => q.status === 'resolved');
+
+        let h = `<div class="poster-header" style="margin-bottom:30px;">
+          <h3 class="text-headline" style="font-size:2rem;">Student Questions</h3>
+          <div style="display:flex;gap:10px;">
+            <span class="badge" style="background:var(--purple); color:var(--white);">${open.length} Pending</span>
+            <span class="badge" style="background:var(--neon-green); color:var(--black);">${resolved.length} Resolved</span>
+          </div>
+        </div>`;
+
+        if (!queries.length) {
+          h += '<p style="opacity:0.6; padding:20px 0;">No student queries assigned to you yet.</p>';
+        } else {
+          // Open queries first
+          if (open.length) {
+            h += `<div style="font-weight:700; text-transform:uppercase; opacity:0.5; font-size:0.85rem; margin-bottom:15px; letter-spacing:1px;">Pending (${open.length})</div>`;
+            open.forEach(q => {
+              h += `<div class="query-card" onclick='replyQuery(${JSON.stringify(q).replace(/'/g,"&apos;")})' style="cursor:pointer;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:10px;">
+                  <div>
+                    <p style="font-weight:600; font-size:0.8rem; opacity:0.5; margin-bottom:4px; text-transform:uppercase;">${q.course_name} · From: ${q.student_name}</p>
+                    <p style="font-size:1.05rem; font-weight:600; line-height:1.4;">${q.question}</p>
+                  </div>
+                  <span class="badge" style="background:var(--purple); color:var(--white); white-space:nowrap;">OPEN</span>
+                </div>
+                <p style="font-size:0.8rem; opacity:0.5;">${new Date(q.created_at).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})}</p>
+              </div>`;
+            });
+          }
+          // Resolved queries collapsed
+          if (resolved.length) {
+            h += `<details style="margin-top:20px;"><summary style="font-weight:700; text-transform:uppercase; opacity:0.5; font-size:0.85rem; cursor:pointer; padding:10px 0;">Resolved (${resolved.length})</summary>`;
+            resolved.forEach(q => {
+              h += `<div class="query-card resolved">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:8px;">
+                  <div>
+                    <p style="font-weight:600; font-size:0.8rem; opacity:0.5; margin-bottom:4px;">${q.course_name} · ${q.student_name}</p>
+                    <p style="font-size:1rem; font-weight:600;">Q: ${q.question}</p>
+                    <p style="font-size:0.95rem; margin-top:8px; border-top:1px solid rgba(0,0,0,0.06); padding-top:8px; opacity:0.7;">A: ${q.response}</p>
+                  </div>
+                  <span class="badge" style="background:var(--neon-green); color:var(--black); white-space:nowrap;">RESOLVED</span>
+                </div>
+              </div>`;
+            });
+            h += `</details>`;
+          }
+        }
+        document.getElementById('box-q').innerHTML = h;
+      } catch(e){ document.getElementById('box-q').innerHTML = '<p style="color:red;">Error loading queries.</p>'; }
     }
     
     function replyQuery(q) {
        document.getElementById('qr-id').value = q.query_id;
-       document.getElementById('qr-meta').textContent = `Query concerning ${q.course_name}`;
-       document.getElementById('qr-q').textContent = `Q: ${q.question}`;
+       document.getElementById('qr-meta').textContent = `${q.course_name}  ·  ${new Date(q.created_at).toLocaleDateString()}`;
+       document.getElementById('qr-student').textContent = `From: ${q.student_name}`;
+       document.getElementById('qr-q').textContent = q.question;
        document.getElementById('qr-resp').value = q.response || '';
        openModal('modal-reply');
     }
     async function submitReply() {
-       const id = document.getElementById('qr-id').value; const resp = document.getElementById('qr-resp').value.trim();
-       if(!resp) return;
+       const id = document.getElementById('qr-id').value;
+       const resp = document.getElementById('qr-resp').value.trim();
+       if(!resp) return alert('Please write an answer first.');
        const r = await fetch(`${API}/queries/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({response:resp}) });
        if(r.ok){ closeModal('modal-reply'); switchView('queries'); }
     }
 
-    // 3. Attendance Marker
+    // ── 3. TAKE ATTENDANCE ───────────────────────────────────────────────────
+    // Stateful attendance object: { student_id: 'present'|'absent'|'late' }
+    let attState = {};
+    let selectedCourseForAtt = null;
+
     async function renderAttendance() {
-       let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card poster-green" style="grid-column: 1/-1; min-height:60vh; padding:40px;">
-         <div class="poster-header"><h3 class="text-headline">Class Database</h3><button class="nav-pill" style="background:var(--purple); color:var(--white);" onclick="openModal('modal-att')">+ Mark Entry</button></div>
-         <div style="margin-top:50px; font-family:var(--font-display); font-size:2.5rem; font-weight:600; opacity:0.5; line-height:1.2;">Use the dispatch button above to lodge attendance entries into the root database.</div>
-       </div></div>`;
-       document.getElementById('canvas').innerHTML = html;
-    }
-    
-    async function submitAttendance() {
-       const body = {
-          student_id: document.getElementById('att-student').value,
-          course_code: document.getElementById('att-course').value.toUpperCase(),
-          date: new Date().toISOString().split('T')[0],
-          status: document.getElementById('att-status').value
-       };
-       const r = await fetch(`${API}/attendance`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-       if(r.ok) { closeModal('modal-att'); document.getElementById('att-student').value=''; } else { alert('Failed.'); }
+      let courseOpts = myCourses.map(c => `<option value="${c.course_id}" data-code="${c.course_code}">${c.course_code} – ${c.course_name} (${c.section})</option>`).join('');
+      const today = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+      
+      const html = `
+        <div class="hero-panel">
+          <div>
+            <p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Instructor Portal</p>
+            <h1 class="text-headline" style="font-size:3rem;">Take Attendance</h1>
+          </div>
+          <span style="opacity:0.5; font-size:0.9rem;">${today}</span>
+        </div>
+        
+        <div class="poster-card" style="padding:40px; margin-bottom:20px;">
+          <div style="display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap; margin-bottom:30px;">
+            <div style="flex:1; min-width:250px;">
+              <label style="font-weight:700; font-size:0.85rem; opacity:0.6; text-transform:uppercase; display:block; margin-bottom:8px;">Select Course</label>
+              <select id="att-course-select" class="form-input" onchange="loadStudentsForCourse()" style="margin:0;">
+                <option value="">— Choose a course —</option>
+                ${courseOpts}
+              </select>
+            </div>
+            <div style="min-width:160px;">
+              <label style="font-weight:700; font-size:0.85rem; opacity:0.6; text-transform:uppercase; display:block; margin-bottom:8px;">Date</label>
+              <input type="date" id="att-date" class="form-input" style="margin:0;" value="${new Date().toISOString().split('T')[0]}">
+            </div>
+          </div>
+          
+          <div id="att-student-list" style="border-radius:var(--radius-lg); overflow:hidden; border:1.5px solid rgba(0,0,0,0.06);">
+            <div style="padding:40px; text-align:center; opacity:0.4;">Select a course above to load students.</div>
+          </div>
+        </div>`;
+      document.getElementById('canvas').innerHTML = html;
     }
 
-    // 4. Campus Blueprint
-    async function renderBlueprint() {
-      let html = `<div class="grid-masonry" style="padding:0;">
-        <div class="poster-card poster-light" style="grid-column:1/-1; padding:40px; background:var(--white); color:var(--black); border:var(--border-line);">
-           <h2 class="text-headline">CAMPUS BLUEPRINT</h2>
-           <div id="bp-preview" style="margin-top:20px; background:rgba(0,0,0,0.02); border-radius:var(--radius-lg); padding:20px; text-align:center;">
-              <span style="opacity:0.5;">Loading Map Data...</span>
-           </div>
-        </div>
-      </div>`;
-      document.getElementById('canvas').innerHTML = html;
+    async function loadStudentsForCourse() {
+      const sel = document.getElementById('att-course-select');
+      const courseId = sel.value;
+      if (!courseId) return;
+      selectedCourseForAtt = courseId;
+      attState = {};
       
+      const listEl = document.getElementById('att-student-list');
+      listEl.innerHTML = '<div style="padding:30px; text-align:center; opacity:0.4;">Loading students...</div>';
+      
+      // Initialize all students as 'present' by default
+      allStudents.forEach(s => { attState[s.student_id] = 'present'; });
+
+      renderStudentList();
+    }
+
+    function renderStudentList() {
+      const listEl = document.getElementById('att-student-list');
+      if (!allStudents.length) {
+        listEl.innerHTML = '<div style="padding:30px; text-align:center; opacity:0.4;">No students found.</div>';
+        return;
+      }
+
+      const presentCount = Object.values(attState).filter(v=>v==='present').length;
+      const absentCount = Object.values(attState).filter(v=>v==='absent').length;
+      const lateCount = Object.values(attState).filter(v=>v==='late').length;
+
+      let html = `<div class="bulk-actions">
+        <span style="font-weight:700; font-size:0.9rem;">${allStudents.length} Students &nbsp;·&nbsp; 
+          <span style="color:green;">${presentCount}P</span> 
+          <span style="color:#FF4D4D; margin:0 6px;">${absentCount}A</span> 
+          <span style="color:var(--purple);">${lateCount}L</span>
+        </span>
+        <div style="margin-left:auto; display:flex; gap:8px;">
+          <button class="att-btn p" onclick="markAll('present')">✓ Mark All Present</button>
+          <button class="att-btn a" onclick="markAll('absent')">✗ Mark All Absent</button>
+          <button class="massive-btn" onclick="submitBulkAttendance()" style="padding:8px 24px; font-size:0.85rem; background:var(--black);">Submit Register</button>
+        </div>
+      </div>
+      <div class="att-hist-row att-hist-header">
+        <span>Student</span><span>Year / Program</span><span>Status</span><span></span>
+      </div>`;
+
+      allStudents.forEach(s => {
+        const status = attState[s.student_id] || 'present';
+        html += `<div class="att-student-row" id="asr-${s.student_id}">
+          <div>
+            <span style="font-weight:700;">${s.name}</span><br>
+            <span style="font-size:0.8rem; opacity:0.5;">${s.email}</span>
+          </div>
+          <span style="font-size:0.85rem; opacity:0.6;">${s.year ? 'Year '+s.year : ''} ${s.program || ''}</span>
+          <span class="badge" id="status-badge-${s.student_id}" style="background:${statusColor(status)}; color:${status==='present'?'#000':'#fff'};">${status.toUpperCase()}</span>
+          <div class="att-status-toggle">
+            <button class="att-btn${status==='present'?' p':''}" onclick="setStatus(${s.student_id},'present')">P</button>
+            <button class="att-btn${status==='absent'?' a':''}" onclick="setStatus(${s.student_id},'absent')">A</button>
+            <button class="att-btn${status==='late'?' l':''}" onclick="setStatus(${s.student_id},'late')">L</button>
+          </div>
+        </div>`;
+      });
+      listEl.innerHTML = html;
+    }
+
+    function statusColor(s) { return s==='present'?'var(--neon-green)':s==='absent'?'#FF4D4D':'var(--purple)'; }
+
+    function setStatus(studentId, status) {
+      attState[studentId] = status;
+      renderStudentList();
+    }
+
+    function markAll(status) {
+      allStudents.forEach(s => { attState[s.student_id] = status; });
+      renderStudentList();
+    }
+
+    async function submitBulkAttendance() {
+      if (!selectedCourseForAtt) return alert('Please select a course first.');
+      const date = document.getElementById('att-date').value;
+      if (!date) return alert('Please select a date.');
+      
+      const records = allStudents.map(s => ({
+        student_id: s.student_id,
+        course_id: parseInt(selectedCourseForAtt),
+        faculty_id: facultyId,
+        date: date,
+        period_no: 1,
+        status: attState[s.student_id] || 'present'
+      }));
+
+      const confirmMsg = `Submit attendance for ${records.length} students on ${date}?`;
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        const r = await fetch(`${API}/attendance`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ records }) });
+        if (r.ok) { 
+          alert(`✓ Attendance submitted for ${records.length} students.`);
+          switchView('history');
+        } else { 
+          const d = await r.json();
+          alert('Error: ' + d.error); 
+        }
+      } catch(e) { alert('Network error. Please retry.'); }
+    }
+
+    // ── 4. ATTENDANCE HISTORY ────────────────────────────────────────────────
+    async function renderAttendanceHistory() {
+      document.getElementById('canvas').innerHTML = `<div class="poster-card" style="padding:40px;" id="hist-container">Loading history...</div>`;
+      
+      let courseFilterOpts = `<option value="">All Courses</option>` + myCourses.map(c => `<option value="${c.course_id}">${c.course_code}</option>`).join('');
+
+      try {
+        const r = await fetch(`${API}/attendance?faculty_id=${facultyId}`);
+        const records = await r.json();
+
+        let html = `<div class="poster-header" style="margin-bottom:20px;">
+          <h3 class="text-headline" style="font-size:2rem;">Attendance History</h3>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <select id="hist-course-filter" class="form-input" style="margin:0;" onchange="filterHistory()">
+              ${courseFilterOpts}
+            </select>
+          </div>
+        </div>
+        <div id="hist-table">`;
+
+        // Group by date
+        const byDate = {};
+        records.forEach(r => {
+          if (!byDate[r.date]) byDate[r.date] = [];
+          byDate[r.date].push(r);
+        });
+
+        const sortedDates = Object.keys(byDate).sort((a,b) => b.localeCompare(a));
+
+        if (!sortedDates.length) {
+          html += '<p style="opacity:0.5; padding:20px 0;">No attendance records found yet.</p>';
+        } else {
+          sortedDates.forEach(date => {
+            const dayRecs = byDate[date];
+            const pCount = dayRecs.filter(r=>r.status==='present').length;
+            const aCount = dayRecs.filter(r=>r.status==='absent').length;
+            html += `<details style="margin-bottom:10px; border:1.5px solid rgba(0,0,0,0.07); border-radius:var(--radius-lg); overflow:hidden;">
+              <summary style="padding:15px 20px; background:var(--bg-light); cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:700;">${new Date(date).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>
+                <div style="display:flex;gap:8px;">
+                  <span class="badge" style="background:var(--neon-green); color:#000;">${pCount}P</span>
+                  <span class="badge" style="background:#FF4D4D;color:#fff;">${aCount}A</span>
+                  <span class="badge" style="background:var(--bg-light);">${dayRecs[0]?.course_code}</span>
+                </div>
+              </summary>
+              <div>
+                <div class="att-hist-row att-hist-header"><span>Date</span><span>Student</span><span>Course</span><span>Status</span></div>`;
+            dayRecs.forEach(rec => {
+              html += `<div class="att-hist-row">
+                <span style="opacity:0.5; font-size:0.8rem;">${rec.date}</span>
+                <span style="font-weight:600;">${rec.student_name}</span>
+                <span class="badge" style="background:var(--bg-light);">${rec.course_code}</span>
+                <span class="badge" style="background:${statusColor(rec.status)}; color:${rec.status==='present'?'#000':'#fff'};">${rec.status.toUpperCase()}</span>
+              </div>`;
+            });
+            html += `</div></details>`;
+          });
+        }
+        html += `</div>`;
+        document.getElementById('hist-container').innerHTML = html;
+        window._histRecords = records;
+      } catch(e){ document.getElementById('hist-container').innerHTML = '<p style="color:red;">Error loading history.</p>'; }
+    }
+
+    function filterHistory() {
+      const courseId = document.getElementById('hist-course-filter').value;
+      if (!courseId) { renderAttendanceHistory(); return; }
+      // Re-render filtered
+      const records = (window._histRecords || []).filter(r => r.course_id == courseId);
+      // Simple re-render of the table part
+      let html = '';
+      if (!records.length) { document.getElementById('hist-table').innerHTML='<p style="opacity:0.5;">No records for this course.</p>'; return; }
+      records.forEach(rec => {
+        html += `<div class="att-hist-row"><span style="opacity:0.5;">${rec.date}</span><span style="font-weight:600;">${rec.student_name}</span><span class="badge">${rec.course_code}</span><span class="badge" style="background:${statusColor(rec.status)};color:${rec.status==='present'?'#000':'#fff'};">${rec.status.toUpperCase()}</span></div>`;
+      });
+      document.getElementById('hist-table').innerHTML = `<div class="att-hist-row att-hist-header"><span>Date</span><span>Student</span><span>Course</span><span>Status</span></div>` + html;
+    }
+
+    // ── 5. CAMPUS BLUEPRINT ──────────────────────────────────────────────────
+    async function renderBlueprint() {
+      let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card poster-light" style="grid-column:1/-1; padding:40px; background:var(--white); color:var(--black); border:var(--border-line);">
+         <h2 class="text-headline">CAMPUS BLUEPRINT</h2>
+         <div id="bp-preview" style="margin-top:20px; text-align:center;"><span style="opacity:0.5;">Loading...</span></div>
+      </div></div>`;
+      document.getElementById('canvas').innerHTML = html;
       const r = await fetch(`${API}/settings/blueprint`);
       const data = await r.json();
-      if(data.blueprint) {
-         document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg); border: 2px solid rgba(0,0,0,0.1);">`;
-      } else {
-         document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.6;">The internal campus map has not been published yet. Check back later.</span>`;
-      }
+      if(data.blueprint) document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg); border:2px solid rgba(0,0,0,0.08);">`;
+      else document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.6;">Campus map not published yet.</span>`;
     }
   </script>
 
   <!-- Settings Modal -->
   <div class="module-modal" id="modal-settings">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width:520px;">
       <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
-      <h2 class="text-headline" style="margin-bottom:30px;">SYSTEM SETTINGS</h2>
+      <h2 class="text-headline" style="margin-bottom:30px;">SETTINGS</h2>
+
       <div class="setting-row">
         <span class="setting-label">Language / भाषा</span>
         <select class="form-input" style="width:200px; margin:0;" id="lang-selector">
-           <option value="en">English</option>
-           <option value="hi">Hindi / हिंदी</option>
+           <option value="en">English</option><option value="hi">Hindi / हिंदी</option>
         </select>
       </div>
-      <div class="setting-row">
-        <span class="setting-label">External Integrations</span>
-        <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
+
+      <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:12px;">
+        <span class="setting-label">🔑 Change Password</span>
+        <input type="password" id="pw-old" class="form-input" style="margin:0;" placeholder="Current Password">
+        <input type="password" id="pw-new" class="form-input" style="margin:0;" placeholder="New Password (min 6 characters)">
+        <input type="password" id="pw-confirm" class="form-input" style="margin:0;" placeholder="Confirm New Password">
+        <div id="pw-msg" style="font-size:0.88rem; font-weight:600; display:none;"></div>
+        <button class="nav-pill" style="background:var(--black); color:white; border:none;" onclick="changePassword()">Update Password</button>
+      </div>
+
+      <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px;">
+        <span class="setting-label">🔗 Link Google Account</span>
+        <div style="display:flex; gap:10px; width:100%;">
             <input type="email" id="link-g-email" class="form-input" style="margin:0; flex:1;" placeholder="Google Email">
-            <button class="nav-pill" style="border-radius:var(--radius-lg);" onclick="linkGoogleAccount()">Bind Account</button>
+            <button class="nav-pill" style="border-radius:var(--radius-lg); white-space:nowrap;" onclick="linkGoogleAccount()">Bind Account</button>
         </div>
       </div>
     </div>
   </div>
+
+  <script>
+    async function changePassword() {
+      const old_password = document.getElementById('pw-old').value;
+      const new_password = document.getElementById('pw-new').value;
+      const confirm      = document.getElementById('pw-confirm').value;
+      const msg          = document.getElementById('pw-msg');
+      msg.style.display = 'block';
+      if (!old_password || !new_password) { msg.style.color='#EF476F'; msg.textContent='Please fill in all fields.'; return; }
+      if (new_password.length < 6)        { msg.style.color='#EF476F'; msg.textContent='New password must be at least 6 characters.'; return; }
+      if (new_password !== confirm)        { msg.style.color='#EF476F'; msg.textContent='Passwords do not match.'; return; }
+      const r = await fetch('/api/auth/change-password', { method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ user_id: session.user_id, old_password, new_password }) });
+      const d = await r.json();
+      if (r.ok) {
+        msg.style.color = 'green'; msg.textContent = '✓ Password updated successfully.';
+        document.getElementById('pw-old').value = '';
+        document.getElementById('pw-new').value = '';
+        document.getElementById('pw-confirm').value = '';
+      } else {
+        msg.style.color = '#EF476F'; msg.textContent = d.error || 'Failed to update password.';
+      }
+    }
+  </script>
 </body>
 </html>

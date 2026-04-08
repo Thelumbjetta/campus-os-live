@@ -85,6 +85,12 @@ app.get('/api/students', (req,res) => {
         if(err) return res.status(500).json({error:err.message}); res.json(rows);
     });
 });
+app.post('/api/students', (req,res) => {
+    const{name,department,year,program,user_id}=req.body;
+    db.run(`INSERT INTO students(name,department,year,program,user_id)VALUES(?,?,?,?,?)`,[name,department,year,program,user_id||null],function(err){
+        if(err) return res.status(400).json({error:err.message}); res.json({student_id:this.lastID});
+    });
+});
 app.get('/api/students/:id', (req,res) => {
     db.get(`SELECT s.*,u.email FROM students s LEFT JOIN users u ON s.user_id=u.user_id WHERE s.student_id=?`,[req.params.id],(err,row)=>{
         if(err) return res.status(500).json({error:err.message}); if(!row) return res.status(404).json({error:'Not found'}); res.json(row);
@@ -95,6 +101,12 @@ app.get('/api/students/:id', (req,res) => {
 app.get('/api/faculty', (req,res) => {
     db.all(`SELECT f.*,u.email FROM faculty f LEFT JOIN users u ON f.user_id=u.user_id ORDER BY f.name`,[],(err,rows)=>{
         if(err) return res.status(500).json({error:err.message}); res.json(rows);
+    });
+});
+app.post('/api/faculty', (req,res) => {
+    const{name,department,designation,user_id}=req.body;
+    db.run(`INSERT INTO faculty(name,department,designation,user_id)VALUES(?,?,?,?)`,[name,department,designation,user_id||null],function(err){
+        if(err) return res.status(400).json({error:err.message}); res.json({faculty_id:this.lastID});
     });
 });
 app.get('/api/faculty/:id/courses', (req,res) => {
@@ -109,11 +121,23 @@ app.get('/api/workers', (req,res) => {
         if(err) return res.status(500).json({error:err.message}); res.json(rows);
     });
 });
+app.post('/api/workers', (req,res) => {
+    const{name,role_title,department,user_id}=req.body;
+    db.run(`INSERT INTO workers(name,role_title,department,user_id)VALUES(?,?,?,?)`,[name,role_title,department,user_id||null],function(err){
+        if(err) return res.status(400).json({error:err.message}); res.json({worker_id:this.lastID});
+    });
+});
 
 // ══ GUARDS ════════════════════════════════════════════
 app.get('/api/guards', (req,res) => {
     db.all(`SELECT * FROM guards ORDER BY name`,[],(err,rows)=>{
         if(err) return res.status(500).json({error:err.message}); res.json(rows);
+    });
+});
+app.post('/api/guards', (req,res) => {
+    const{name,badge_no,user_id}=req.body;
+    db.run(`INSERT INTO guards(name,badge_no,user_id)VALUES(?,?,?)`,[name,badge_no,user_id||null],function(err){
+        if(err) return res.status(400).json({error:err.message}); res.json({guard_id:this.lastID});
     });
 });
 
@@ -143,9 +167,47 @@ app.post('/api/timetable', (req,res) => {
         });
     });
 });
+app.put('/api/timetable/:id', (req,res) => {
+    const{course_id,faculty_id,section,day_of_week,period_no,start_time,end_time,classroom}=req.body;
+    const id = req.params.id;
+    // Conflict check: another slot (not this one) already occupies same section+day+period
+    db.get(`SELECT 1 FROM timetables WHERE section=? AND day_of_week=? AND period_no=? AND timetable_id!=?`,
+        [section,day_of_week,period_no,id],(err,ex)=>{
+            if(ex) return res.status(409).json({error:'Timetable conflict: that slot is already taken by another class'});
+            db.run(`UPDATE timetables SET course_id=?,faculty_id=?,section=?,day_of_week=?,period_no=?,start_time=?,end_time=?,classroom=? WHERE timetable_id=?`,
+                [course_id,faculty_id,section,day_of_week,period_no,start_time,end_time,classroom,id],
+                function(err2){ if(err2) return res.status(400).json({error:err2.message}); res.json({changes:this.changes}); });
+        });
+});
 app.delete('/api/timetable/:id', (req,res) => {
     db.run(`DELETE FROM timetables WHERE timetable_id=?`,[req.params.id],function(err){
         if(err) return res.status(400).json({error:err.message}); res.json({changes:this.changes});
+    });
+});
+
+// ══ PASSWORD MANAGEMENT ════════════════════════════════
+// Self-service: change own password (requires old password)
+app.put('/api/auth/change-password', (req,res) => {
+    const{user_id, old_password, new_password}=req.body;
+    if(!user_id||!old_password||!new_password) return res.status(400).json({error:'user_id, old_password and new_password required'});
+    if(new_password.length < 6) return res.status(400).json({error:'New password must be at least 6 characters'});
+    db.get(`SELECT * FROM users WHERE user_id=? AND password=?`,[user_id,old_password],(err,user)=>{
+        if(err) return res.status(500).json({error:err.message});
+        if(!user) return res.status(401).json({error:'Current password is incorrect'});
+        db.run(`UPDATE users SET password=? WHERE user_id=?`,[new_password,user_id],function(err2){
+            if(err2) return res.status(400).json({error:err2.message});
+            res.json({success:true,message:'Password updated successfully'});
+        });
+    });
+});
+// Admin force-reset: set any user's password without needing old one
+app.put('/api/users/:id/reset-password', (req,res) => {
+    const{new_password}=req.body;
+    if(!new_password||new_password.length<6) return res.status(400).json({error:'New password must be at least 6 characters'});
+    db.run(`UPDATE users SET password=? WHERE user_id=?`,[new_password,req.params.id],function(err){
+        if(err) return res.status(400).json({error:err.message});
+        if(this.changes===0) return res.status(404).json({error:'User not found'});
+        res.json({success:true,message:'Password reset successfully'});
     });
 });
 
@@ -161,16 +223,42 @@ app.get('/api/attendance', (req,res) => {
     sql+=' ORDER BY a.date DESC,a.period_no';
     db.all(sql,params,(err,rows)=>{ if(err) return res.status(500).json({error:err.message}); res.json(rows); });
 });
+// Get students enrolled in a course (via faculty_courses)
+app.get('/api/students/by-course/:course_id', (req, res) => {
+    db.all(`
+        SELECT DISTINCT s.student_id, s.name, s.year, s.program, u.email
+        FROM students s
+        JOIN users u ON s.user_id = u.user_id
+        ORDER BY s.name
+    `, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
 app.get('/api/attendance/summary/:student_id', (req,res) => {
     db.all(`SELECT c.course_id,c.course_code,c.course_name,COUNT(*) AS total,SUM(CASE WHEN a.status='present' THEN 1 ELSE 0 END) AS present,SUM(CASE WHEN a.status='absent' THEN 1 ELSE 0 END) AS absent,SUM(CASE WHEN a.status='late' THEN 1 ELSE 0 END) AS late FROM attendance a JOIN courses c ON a.course_id=c.course_id WHERE a.student_id=? GROUP BY c.course_id`,[req.params.student_id],(err,rows)=>{
         if(err) return res.status(500).json({error:err.message}); res.json(rows);
     });
 });
 app.post('/api/attendance', (req,res) => {
-    const{records}=req.body;
-    if(!records||!records.length) return res.status(400).json({error:'No records'});
+    // Accept both single record object OR records[] array
+    let records = req.body.records;
+    if (!records) {
+        // Single record mode — look up student_id and course_id from student/course codes
+        const { student_id, course_code, date, status, faculty_id } = req.body;
+        db.get(`SELECT course_id FROM courses WHERE course_code=?`, [course_code], (err2, course) => {
+            if (err2 || !course) return res.status(400).json({ error: 'Course not found: ' + course_code });
+            const fid = faculty_id || 1;
+            db.run(`INSERT OR REPLACE INTO attendance(student_id,course_id,faculty_id,date,period_no,status)VALUES(?,?,?,?,1,?)`,
+                [student_id, course.course_id, fid, date, status],
+                function(err3) { if(err3) return res.status(400).json({error:err3.message}); res.json({message:'1 record saved'}); });
+        });
+        return;
+    }
+    if(!records.length) return res.status(400).json({error:'No records'});
     const stmt=db.prepare(`INSERT OR REPLACE INTO attendance(student_id,course_id,faculty_id,date,period_no,status)VALUES(?,?,?,?,?,?)`);
-    records.forEach(r=>stmt.run(r.student_id,r.course_id,r.faculty_id,r.date,r.period_no,r.status));
+    records.forEach(r=>stmt.run(r.student_id,r.course_id,r.faculty_id,r.date,r.period_no||1,r.status));
     stmt.finalize(err=>{ if(err) return res.status(400).json({error:err.message}); res.json({message:`${records.length} records saved`}); });
 });
 
@@ -184,15 +272,32 @@ app.get('/api/notices', (req,res) => {
     db.all(sql,params,(err,rows)=>{ if(err) return res.status(500).json({error:err.message}); res.json(rows); });
 });
 app.post('/api/notices', (req,res) => {
-    const{title,content,target_role,posted_by,valid_until}=req.body;
-    db.run(`INSERT INTO notices(title,content,target_role,posted_by,valid_until)VALUES(?,?,?,?,?)`,[title,content,target_role||'all',posted_by,valid_until||null],function(err){
-        if(err) return res.status(400).json({error:err.message}); res.json({notice_id:this.lastID});
-    });
+    const{title,content,target_role,posted_by,valid_until,image_data,created_by}=req.body;
+    const poster = posted_by || created_by;
+    db.run(`INSERT INTO notices(title,content,target_role,posted_by,valid_until,image_data)VALUES(?,?,?,?,?,?)`,
+        [title,content,target_role||'all',poster,valid_until||null,image_data||null],function(err){
+            if(err) return res.status(400).json({error:err.message}); res.json({notice_id:this.lastID});
+        });
 });
 app.delete('/api/notices/:id', (req,res) => {
     db.run(`DELETE FROM notices WHERE notice_id=?`,[req.params.id],function(err){
         if(err) return res.status(400).json({error:err.message}); res.json({changes:this.changes});
     });
+});
+// Clear all notices (admin reset)
+app.delete('/api/notices', (req,res) => {
+    db.run(`DELETE FROM notices`, [], function(err){
+        if(err) return res.status(400).json({error:err.message}); res.json({changes:this.changes});
+    });
+});
+// Clean all user-generated content (queries, public forum)
+app.delete('/api/data/user-content', (req,res) => {
+    db.run(`DELETE FROM public_queries`, [], () => {
+    db.run(`DELETE FROM query_replies`, [], () => {
+    db.run(`DELETE FROM queries`, [], () => {
+    db.run(`DELETE FROM issue_reports`, [], () => {
+        res.json({message:'All user-generated content cleared.'});
+    }); }); }); });
 });
 
 // ══ QUERIES ════════════════════════════════════════════
@@ -212,7 +317,14 @@ app.post('/api/queries', (req,res) => {
         if(err) return res.status(400).json({error:err.message}); res.json({query_id:this.lastID});
     });
 });
+// Both routes for backward compatibility
 app.put('/api/queries/:id/respond', (req,res) => {
+    const{response}=req.body;
+    db.run(`UPDATE queries SET response=?,status='resolved',resolved_at=CURRENT_TIMESTAMP WHERE query_id=?`,[response,req.params.id],function(err){
+        if(err) return res.status(400).json({error:err.message}); res.json({changes:this.changes});
+    });
+});
+app.put('/api/queries/:id', (req,res) => {
     const{response}=req.body;
     db.run(`UPDATE queries SET response=?,status='resolved',resolved_at=CURRENT_TIMESTAMP WHERE query_id=?`,[response,req.params.id],function(err){
         if(err) return res.status(400).json({error:err.message}); res.json({changes:this.changes});
@@ -309,14 +421,14 @@ app.delete('/api/issues/:id', (req,res) => {
     });
 });
 
-// ══ PUBLIC FORUM (NEW) ══════════════════════════════════
-const BAD_WORDS = ['fuck', 'shit', 'bitch', 'asshole', 'cunt', 'dick'];
+// ══ PUBLIC FORUM ══════════════════════════════════════
+const BAD_WORDS = ['fuck', 'shit', 'bitch', 'asshole', 'cunt', 'dick', 'hello'];
 function maskBadWords(text) {
     if (!text) return text;
     let masked = text;
     BAD_WORDS.forEach(word => {
         const regex = new RegExp(`\\b${word}\\b`, 'gi');
-        masked = masked.replace(regex, '****');
+        masked = masked.replace(regex, '*'.repeat(word.length));
     });
     return masked;
 }
@@ -395,6 +507,82 @@ app.post('/api/geofence', (req,res) => {
     db.run(`INSERT INTO geofence_logs(lat,lng,status)VALUES(?,?,?)`,[lat,lng,status],function(err){
         if(err) return res.status(500).json({error:err.message}); res.json({id:this.lastID});
     });
+});
+
+// ══ SECURITY ALERTS ════════════════════════════════════
+app.get('/api/security-alerts', (req,res) => {
+    db.all(`SELECT * FROM security_alerts ORDER BY issued_at DESC`, [], (err,rows) => {
+        if(err) return res.status(500).json({error:err.message}); res.json(rows||[]);
+    });
+});
+app.post('/api/security-alerts', (req,res) => {
+    const{alert_type,location,details,severity}=req.body;
+    db.run(`INSERT INTO security_alerts(alert_type,location,details,severity)VALUES(?,?,?,?)`,
+        [alert_type,location,details,severity||'medium'],function(err){
+            if(err) return res.status(400).json({error:err.message}); res.json({alert_id:this.lastID});
+        });
+});
+app.put('/api/security-alerts/:id/resolve', (req,res) => {
+    db.run(`UPDATE security_alerts SET resolved=1,resolved_at=CURRENT_TIMESTAMP WHERE alert_id=?`,
+        [req.params.id],function(err){ if(err) return res.status(400).json({error:err.message}); res.json({changes:this.changes}); });
+});
+
+// ══ GUARD SCHEDULES ════════════════════════════════════
+app.get('/api/guard-schedules', (req,res) => {
+    let sql = `SELECT gs.*, g.name AS guard_name FROM guard_schedules gs LEFT JOIN guards g ON gs.guard_id=g.guard_id WHERE 1=1`;
+    const params = [];
+    if(req.query.guard_id){ sql += ` AND gs.guard_id=?`; params.push(req.query.guard_id); }
+    sql += ` ORDER BY gs.shift_date, gs.shift_start`;
+    db.all(sql, params, (err,rows) => {
+        if(err) return res.status(500).json({error:err.message}); res.json(rows||[]);
+    });
+});
+app.post('/api/guard-schedules', (req,res) => {
+    const{guard_id,shift_date,shift_start,shift_end,duty_area,post_no}=req.body;
+    db.run(`INSERT INTO guard_schedules(guard_id,shift_date,shift_start,shift_end,duty_area,post_no)VALUES(?,?,?,?,?,?)`,
+        [guard_id,shift_date,shift_start,shift_end,duty_area,post_no||'A'],function(err){
+            if(err) return res.status(400).json({error:err.message}); res.json({schedule_id:this.lastID});
+        });
+});
+
+// ══ WORKER DUTIES ══════════════════════════════════════
+app.get('/api/worker-duties', (req,res) => {
+    let sql = `SELECT wd.*, w.name AS worker_name FROM worker_duties wd LEFT JOIN workers w ON wd.worker_id=w.worker_id WHERE 1=1`;
+    const params = [];
+    if(req.query.worker_id){ sql += ` AND wd.worker_id=?`; params.push(req.query.worker_id); }
+    sql += ` ORDER BY wd.duty_date, wd.start_time`;
+    db.all(sql, params, (err,rows) => {
+        if(err) return res.status(500).json({error:err.message}); res.json(rows||[]);
+    });
+});
+app.put('/api/worker-duties/:id/complete', (req,res) => {
+    db.run(`UPDATE worker_duties SET completed=1 WHERE duty_id=?`,[req.params.id],function(err){
+        if(err) return res.status(400).json({error:err.message}); res.json({changes:this.changes});
+    });
+});
+
+// ══ NOTICE DELETE ═══════════════════════════════════════
+app.delete('/api/notices/:id', (req,res) => {
+    db.run(`DELETE FROM notices WHERE notice_id=?`,[req.params.id],function(err){
+        if(err) return res.status(400).json({error:err.message}); res.json({changes:this.changes});
+    });
+});
+
+// ══ USER DELETE ══════════════════════════════════════════
+app.delete('/api/users/:id', (req,res) => {
+    db.run(`DELETE FROM users WHERE user_id=?`,[req.params.id],function(err){
+        if(err) return res.status(400).json({error:err.message}); res.json({changes:this.changes});
+    });
+});
+
+// ══ ISSUE SINGLE RECORD (with image) ════════════════════
+app.get('/api/issues/:id', (req,res) => {
+    db.get(`SELECT ir.*, s.name AS student_name FROM issue_reports ir LEFT JOIN students s ON ir.student_id=s.student_id WHERE ir.report_id=?`,
+        [req.params.id],(err,row)=>{
+            if(err) return res.status(500).json({error:err.message});
+            if(!row) return res.status(404).json({error:'Not found'});
+            res.json(row);
+        });
 });
 
 // ══ SYSTEM SETTINGS ═══════════════════════════════════

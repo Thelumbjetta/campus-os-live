@@ -9,11 +9,34 @@
     body { background-color: var(--white); }
     .top-section { background: var(--bg-light); border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; padding-bottom: 20px; margin-bottom: 30px; }
     .hero-panel { display: flex; justify-content: space-between; align-items: center; padding: 40px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 30px; }
+    
+    .stat-card { background: var(--white); border: 1.5px solid rgba(0,0,0,0.07); border-radius: var(--radius-lg); padding: 28px; display:flex; flex-direction:column; gap:8px; transition: all 0.2s; }
+    .stat-card:hover { transform:translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+    .stat-number { font-family: var(--font-display); font-size: 3rem; font-weight: 800; line-height:1; }
+    .stat-label { font-size: 0.85rem; font-weight: 600; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
+    
+    .issue-row { padding:18px 20px; border-bottom: 1.5px solid rgba(0,0,0,0.05); cursor:pointer; transition:background 0.2s; }
+    .issue-row:hover { background: var(--bg-light); }
+    .issue-row:last-child { border-bottom:none; }
+    
+    .user-row { display: grid; grid-template-columns: 1fr 1fr auto auto; gap:15px; padding:14px 20px; align-items:center; border-bottom: 1.5px solid rgba(0,0,0,0.05); }
+    .user-row:last-child { border-bottom:none; }
+    .user-row:hover { background: rgba(0,0,0,0.01); }
+    
+    .filter-tabs { display:flex; gap:8px; padding:16px 0; }
+    .ftab { padding:7px 16px; border-radius:20px; border:1.5px solid rgba(0,0,0,0.1); background:transparent; font-weight:700; font-size:0.85rem; cursor:pointer; transition:all 0.2s; }
+    .ftab.active { background:var(--black); color:var(--white); border-color:var(--black); }
+    
+    .personnel-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap:10px; margin:15px 0; }
+    .personnel-card { border:2px solid rgba(0,0,0,0.1); border-radius:var(--radius-lg); padding:15px; cursor:pointer; transition:all 0.2s; text-align:center; }
+    .personnel-card:hover { border-color:var(--purple); }
+    .personnel-card.selected { border-color:var(--purple); background:rgba(183,132,245,0.08); }
+    .personnel-name { font-weight:700; display:block; margin-bottom:5px; }
+    .personnel-stats { font-size:0.8rem; opacity:0.6; }
   </style>
 </head>
 <body>
   <div class="top-section">
-    <!-- Navbar -->
     <nav class="navbar-fluid stagger-up d-1">
       <a href="landing.html" class="brand-logotype">
         <div style="width:36px;height:36px;background:var(--black);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">C</div>
@@ -25,8 +48,6 @@
         <button class="nav-pill" onclick="logout()" style="background:var(--black); color:var(--white); box-shadow:none;">Logout</button>
       </div>
     </nav>
-
-    <!-- Filters -->
     <div class="container stagger-up d-2" style="margin-top:20px;">
       <div class="filter-ribbon">
         <button class="filter-btn active" data-view="overview" onclick="switchView('overview')">Overview</button>
@@ -39,50 +60,103 @@
   </div>
 
   <div class="container stagger-up d-4">
-      <div id="canvas" class="dashboard-canvas"></div>
+    <div id="canvas" class="dashboard-canvas"></div>
   </div>
 
   <!-- User Creation Modal -->
   <div class="module-modal" id="modal-user">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width:700px;">
       <button class="close-btn" onclick="closeModal('modal-user')">✕</button>
-      <h2 class="text-headline" style="margin-bottom:30px;">NEW SYS USER</h2>
-      <input id="u-name" class="form-input" placeholder="Full Name" type="text">
-      <input id="u-email" class="form-input" placeholder="Email Address" type="email">
-      <input id="u-password" class="form-input" placeholder="Password" type="password">
-      <select id="u-role" class="form-input"><option value="student">Student</option><option value="faculty">Faculty</option><option value="admin">Admin</option><option value="worker">Worker</option><option value="guard">Guard</option></select>
-      <button class="massive-btn" onclick="submitUser()">Register User &rarr;</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">CREATE USER</h2>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+        <input id="u-name" class="form-input" placeholder="Full Name" type="text" style="grid-column:1/-1;">
+        <input id="u-email" class="form-input" placeholder="Email Address" type="email">
+        <input id="u-password" class="form-input" placeholder="Password" type="password">
+      </div>
+      <select id="u-role" class="form-input" onchange="showRoleFields()">
+        <option value="student">Student</option>
+        <option value="faculty">Faculty</option>
+        <option value="admin">Admin</option>
+        <option value="worker">Worker</option>
+        <option value="guard">Guard</option>
+      </select>
+      
+      <!-- Role-specific fields shown conditionally -->
+      <div id="role-fields-student">
+        <label style="font-weight:700; font-size:0.85rem; opacity:0.5; text-transform:uppercase; display:block; margin-bottom:8px;">Student Profile</label>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <input id="s-dept" class="form-input" placeholder="Department (e.g. CS)" type="text" style="margin:0;">
+          <input id="s-year" class="form-input" placeholder="Year (1-4)" type="number" min="1" max="4" style="margin:0;">
+          <input id="s-program" class="form-input" placeholder="Program (e.g. B.Tech)" type="text" style="margin:0;">
+        </div>
+      </div>
+      <div id="role-fields-faculty" style="display:none;">
+        <label style="font-weight:700; font-size:0.85rem; opacity:0.5; text-transform:uppercase; display:block; margin-bottom:8px;">Faculty Profile</label>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <input id="f-dept" class="form-input" placeholder="Department" type="text" style="margin:0;">
+          <input id="f-desig" class="form-input" placeholder="Designation" type="text" style="margin:0;">
+        </div>
+      </div>
+      <div id="role-fields-worker" style="display:none;">
+        <label style="font-weight:700; font-size:0.85rem; opacity:0.5; text-transform:uppercase; display:block; margin-bottom:8px;">Worker Profile</label>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <input id="w-role" class="form-input" placeholder="Role Title (e.g. Electrician)" type="text" style="margin:0;">
+          <input id="w-dept" class="form-input" placeholder="Department (e.g. Maintenance)" type="text" style="margin:0;">
+        </div>
+      </div>
+      <div id="role-fields-guard" style="display:none;">
+        <label style="font-weight:700; font-size:0.85rem; opacity:0.5; text-transform:uppercase; display:block; margin-bottom:8px;">Guard Profile</label>
+        <input id="g-badge" class="form-input" placeholder="Badge No (e.g. GRD-003)" type="text">
+      </div>
+      
+      <button class="massive-btn" style="background:var(--black);" onclick="submitUser()">Register User &rarr;</button>
     </div>
   </div>
 
-  <!-- Re-assign Issue Modal -->
+  <!-- Issue Detail / Assign Modal -->
   <div class="module-modal" id="modal-issue-edit">
     <div class="modal-content" style="max-width:800px;">
       <button class="close-btn" onclick="closeModal('modal-issue-edit')">✕</button>
-      <h2 class="text-headline" style="margin-bottom:30px;">UPDATE ISSUE</h2>
+      <h2 class="text-headline" style="margin-bottom:20px;" id="ie-title-h">UPDATE ISSUE</h2>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px; background:var(--bg-light); padding:20px; border-radius:var(--radius-lg);">
+        <div><p style="font-size:0.8rem; text-transform:uppercase; opacity:0.5; margin-bottom:4px;">Category</p><p id="ie-category" style="font-weight:700;"></p></div>
+        <div><p style="font-size:0.8rem; text-transform:uppercase; opacity:0.5; margin-bottom:4px;">Location</p><p id="ie-location" style="font-weight:700;"></p></div>
+        <div><p style="font-size:0.8rem; text-transform:uppercase; opacity:0.5; margin-bottom:4px;">Severity</p><p id="ie-severity" style="font-weight:700;"></p></div>
+        <div><p style="font-size:0.8rem; text-transform:uppercase; opacity:0.5; margin-bottom:4px;">Reported By</p><p id="ie-reporter" style="font-weight:700;"></p></div>
+      </div>
+      <p style="font-size:0.8rem; text-transform:uppercase; opacity:0.5; margin-bottom:6px;">Description</p>
+      <p id="ie-desc" style="border:1.5px solid rgba(0,0,0,0.07); border-radius:var(--radius-lg); padding:15px; margin-bottom:20px; line-height:1.6;"></p>
+      
+      <!-- Issue image preview -->
+      <div id="ie-image-wrap" style="display:none; margin-bottom:20px;">
+        <p style="font-size:0.8rem; text-transform:uppercase; opacity:0.5; margin-bottom:8px;">Submitted Photo</p>
+        <img id="ie-image" style="max-width:100%; border-radius:var(--radius-lg); border:1.5px solid rgba(0,0,0,0.08);">
+      </div>
+      
       <input type="hidden" id="ie-id">
       <input type="hidden" id="ie-assignment">
       
-      <div class="fluid-row" style="margin-bottom:20px;"><span class="fluid-row-label">Ticket ID</span><span class="fluid-row-val" id="ie-lbl-id"></span></div>
-      
-      <h3 style="margin-bottom:15px; font-weight:600;">Dispatch Personnel</h3>
+      <h3 style="font-weight:700; margin-bottom:12px;">Dispatch Personnel</h3>
       <div id="ie-personnel-grid" class="personnel-grid"></div>
       
-      <select id="ie-status" class="form-input" style="margin-top:30px;">
-        <option value="pending">Pending</option><option value="assigned">Assigned</option>
-        <option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
+      <select id="ie-status" class="form-input">
+        <option value="pending">Pending</option>
+        <option value="assigned">Assigned</option>
+        <option value="in_progress">In Progress</option>
+        <option value="resolved">Resolved</option>
       </select>
-      
+      <textarea id="ie-notes" class="form-input" placeholder="Admin Notes (optional)..." style="height:80px; resize:vertical;"></textarea>
       <button class="massive-btn" id="ie-submit-btn" style="background:var(--black);" onclick="submitIssueUpdate()">Confirm Dispatch</button>
-      <div class="dispatch-loader" id="ie-loader">Dispatching Personnel...</div>
     </div>
   </div>
 
   <script>
     const API = '/api';
     let session = null;
-    let allUsers = [];
-    let allIssues = [];
+    let allUsers = [], allIssues = [];
+    let currentIssueFilter = 'all';
 
     function openModal(i) { document.getElementById(i).classList.add('open'); }
     function closeModal(i) { document.getElementById(i).classList.remove('open'); }
@@ -92,20 +166,32 @@
        if(!google_email) return;
        const r = await fetch(`${API}/auth/google-link`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id: session.user_id, google_email}) });
        const d = await r.json();
-       if(r.ok) { alert('Successfully linked to Google Account: ' + google_email); }
-       else { alert('ERROR: ' + d.error); }
+       if(r.ok) { alert('Linked: ' + google_email); } else { alert('ERROR: ' + d.error); }
+    }
+
+    function showRoleFields() {
+      const role = document.getElementById('u-role').value;
+      ['student','faculty','worker','guard'].forEach(r => {
+        const el = document.getElementById(`role-fields-${r}`);
+        if(el) el.style.display = (r === role) ? 'block' : 'none';
+      });
     }
 
     window.onload = async () => {
       session = JSON.parse(sessionStorage.getItem('user') || 'null');
       if (!session || session.role !== 'admin') { window.location.href = 'index.html'; return; }
       document.getElementById('lbl-name').textContent = session.name;
-      await preloadUsers();
+      
+      // Prefetch users and issues in parallel
+      await Promise.all([preloadUsers(), preloadIssues()]);
       await renderOverview();
     };
 
     async function preloadUsers() {
-       try { const r = await fetch(`${API}/users`); allUsers = await r.json(); } catch(e){}
+      try { const r = await fetch(`${API}/users`); allUsers = await r.json(); } catch(e){}
+    }
+    async function preloadIssues() {
+      try { const r = await fetch(`${API}/issues`); allIssues = await r.json(); } catch(e){}
     }
 
     async function switchView(viewName) {
@@ -123,186 +209,553 @@
       }, 300);
     }
 
-    // 1. Overview
+    // ── 1. OVERVIEW (with real metrics) ─────────────────────────────────────
     async function renderOverview() {
-      let html = `<div class="hero-panel"><div><p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Central Command</p><h1 class="text-headline" style="font-size:3rem;">Root Dashboard</h1></div></div>`;
-      html += `<div class="grid-masonry" style="padding:0;">
-        <div class="poster-card poster-dark"><div class="poster-header"><h3 class="poster-title">System Metrics</h3></div>
-          <div class="poster-content" style="display:flex; flex-wrap:wrap; gap:20px;">
-             <div style="flex:1;"><div class="text-headline" style="font-size:4rem;">${allUsers.length}</div><div style="opacity:0.6;">Total Users</div></div>
-             <div style="flex:1;"><div class="text-headline" style="font-size:4rem;color:var(--neon-green);">Active</div><div style="opacity:0.6;">Status</div></div>
+      let summary = {};
+      try {
+        const r = await fetch(`${API}/reports/summary`);
+        summary = await r.json();
+      } catch(e) {}
+
+      const pendingIssues = allIssues.filter(i => i.status === 'pending').length;
+      const inProgress = allIssues.filter(i => i.status === 'in_progress' || i.status === 'assigned').length;
+      const resolved = allIssues.filter(i => i.status === 'resolved').length;
+      const criticalAlerts = allIssues.filter(i => i.severity === 'critical' && i.status !== 'resolved').length;
+
+      const byRole = {};
+      allUsers.forEach(u => { byRole[u.role] = (byRole[u.role]||0)+1; });
+
+      let html = `
+        <div class="hero-panel">
+          <div>
+            <p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Root Access</p>
+            <h1 class="text-headline" style="font-size:3rem;">Admin Command Center</h1>
+          </div>
+          <span class="badge" style="background:var(--neon-green); color:#000; padding:10px 20px; font-size:0.9rem;">● SYSTEM ACTIVE</span>
+        </div>
+        
+        <!-- Live Metrics Grid -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap:15px; margin-bottom:30px;">
+          <div class="stat-card">
+            <span class="stat-number">${allUsers.length}</span>
+            <span class="stat-label">Total Users</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number" style="color:var(--purple);">${pendingIssues}</span>
+            <span class="stat-label">Pending Issues</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number" style="color:#FFB800;">${inProgress}</span>
+            <span class="stat-label">In Progress</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number" style="color:green;">${resolved}</span>
+            <span class="stat-label">Resolved</span>
+          </div>
+          ${criticalAlerts ? `<div class="stat-card" style="border-color:#FF4D4D; background:rgba(255,77,77,0.05);">
+            <span class="stat-number" style="color:#FF4D4D;">${criticalAlerts}</span>
+            <span class="stat-label">⚠ Critical Alerts</span>
+          </div>` : ''}
+          <div class="stat-card">
+            <span class="stat-number">${summary.notices_this_week || 0}</span>
+            <span class="stat-label">Notices This Week</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">${summary.open_queries || 0}</span>
+            <span class="stat-label">Open Queries</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">${summary.attendance_today || 0}</span>
+            <span class="stat-label">Att. Records Today</span>
           </div>
         </div>
-      </div>`;
+        
+        <!-- User breakdown -->
+        <div class="poster-card poster-dark" style="padding:40px;">
+          <h3 class="text-headline" style="font-size:1.8rem; margin-bottom:20px;">User Distribution</h3>
+          <div style="display:flex; gap:15px; flex-wrap:wrap;">
+            ${Object.entries(byRole).map(([role, count]) => `
+              <div style="flex:1; min-width:120px; background:rgba(255,255,255,0.05); border-radius:var(--radius-lg); padding:20px; text-align:center;">
+                <div class="text-headline" style="font-size:2.5rem;">${count}</div>
+                <div style="opacity:0.6; text-transform:uppercase; font-size:0.85rem; margin-top:5px;">${role}</div>
+              </div>`).join('')}
+          </div>
+        </div>`;
       document.getElementById('canvas').innerHTML = html;
     }
 
-    // 2. Users
+    // ── 2. USERS ─────────────────────────────────────────────────────────────
     async function renderUsers() {
-      try {
-         const r = await fetch(`${API}/users`); const users = await r.json();
-         let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card poster-blue" style="grid-column:1/-1; padding:40px;">
-            <div class="poster-header"><h3 class="poster-title text-headline">Registry</h3><button class="nav-pill" style="background:var(--white); color:var(--black);" onclick="openModal('modal-user')">+ Create User</button></div>
-            <div class="poster-content" style="column-count:2; column-gap:40px; margin-top:30px;">`;
-         users.forEach(u => { html += `<div class="fluid-row" style="border-bottom-color:rgba(255,255,255,0.2);"><span class="fluid-row-label">${u.name} <br><span style="opacity:0.8;font-size:0.8rem;">${u.email}</span></span><span class="badge" style="background:var(--black); color:#fff; align-self:center;">${u.role.toUpperCase()}</span></div>`; });
-         html += `</div></div></div>`; document.getElementById('canvas').innerHTML = html;
-      } catch(e) {}
+      let html = `
+        <div class="poster-card" style="padding:40px;">
+          <div class="poster-header" style="margin-bottom:20px;">
+            <h3 class="text-headline" style="font-size:2rem;">User Registry</h3>
+            <button class="massive-btn" style="background:var(--black); width:auto; padding:10px 30px;" onclick="openModal('modal-user')">+ Create User</button>
+          </div>
+          
+          <!-- Search & Filter -->
+          <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+            <input type="text" id="user-search" class="form-input" placeholder="Search by name or email..." style="flex:1; margin:0;" oninput="filterUserList()">
+            <select id="user-role-filter" class="form-input" style="width:160px; margin:0;" onchange="filterUserList()">
+              <option value="">All Roles</option>
+              <option value="student">Student</option>
+              <option value="faculty">Faculty</option>
+              <option value="admin">Admin</option>
+              <option value="worker">Worker</option>
+              <option value="guard">Guard</option>
+            </select>
+          </div>
+          
+          <div id="user-list-wrap" style="border:1.5px solid rgba(0,0,0,0.06); border-radius:var(--radius-lg); overflow:hidden;">
+            <div class="user-row" style="background:var(--bg-light); font-weight:700; font-size:0.8rem; text-transform:uppercase; opacity:0.5;">
+              <span>Name / Email</span><span>Role</span><span></span><span></span>
+            </div>
+            ${allUsers.map(u => `
+              <div class="user-row" id="urow-${u.user_id}">
+                <div>
+                  <p style="font-weight:700;">${u.name}</p>
+                  <p style="font-size:0.8rem; opacity:0.5;">${u.email}</p>
+                </div>
+                <span class="badge" style="background:${roleBadgeColor(u.role)}; color:${u.role==='student'?'#000':'var(--white)'};">${u.role.toUpperCase()}</span>
+                <span style="opacity:0.4; font-size:0.8rem;">${new Date(u.created_at).toLocaleDateString()}</span>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <button class="nav-pill" style="padding:5px 12px; font-size:0.75rem; border-color:var(--purple); color:var(--purple);" onclick="openResetPassword(${u.user_id},'${u.name.replace(/'/g,'&#39;')}')">🔑 Reset PW</button>
+                  <button class="nav-pill" style="padding:5px 12px; font-size:0.75rem;" onclick="deleteUser(${u.user_id},'${u.name.replace(/'/g,'&#39;')}')">Delete</button>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+      document.getElementById('canvas').innerHTML = html;
+    }
+
+    function roleBadgeColor(r) {
+      return {student:'var(--neon-green)', faculty:'var(--purple)', admin:'var(--black)', worker:'#FF8C00', guard:'#1A73E8'}[r] || '#999';
+    }
+
+    function filterUserList() {
+      const search = document.getElementById('user-search').value.toLowerCase();
+      const role = document.getElementById('user-role-filter').value;
+      const filtered = allUsers.filter(u => {
+        const matchSearch = !search || u.name.toLowerCase().includes(search) || u.email.toLowerCase().includes(search);
+        const matchRole = !role || u.role === role;
+        return matchSearch && matchRole;
+      });
+      // Update visible rows
+      allUsers.forEach(u => {
+        const row = document.getElementById(`urow-${u.user_id}`);
+        if(row) row.style.display = filtered.includes(u) ? '' : 'none';
+      });
     }
 
     async function submitUser() {
-      const u = { name:document.getElementById('u-name').value, email:document.getElementById('u-email').value, password:document.getElementById('u-password').value, role:document.getElementById('u-role').value };
+      const role = document.getElementById('u-role').value;
+      const u = {
+        name: document.getElementById('u-name').value.trim(),
+        email: document.getElementById('u-email').value.trim(),
+        password: document.getElementById('u-password').value,
+        role
+      };
+      if(!u.name || !u.email || !u.password) return alert('Name, email, and password are required.');
+      
       const r = await fetch(`${API}/users`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(u) });
-      if(r.ok) { closeModal('modal-user'); switchView('users'); alert('User registered.'); preloadUsers(); }
-    }
-
-    // 3. Issues
-    async function renderIssues() {
+      if(!r.ok) { const d=await r.json(); return alert('Error: '+d.error); }
+      const { user_id } = await r.json();
+      
+      // Create role-specific profile
       try {
-         const r = await fetch(`${API}/issues`); allIssues = await r.json(); const issues = allIssues;
-         let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card" style="grid-column:1/-1;">
-            <div class="poster-header"><h3 class="poster-title text-headline">Live Dispatch</h3></div>
-            <div class="poster-content" style="margin-top:30px;">`;
-         issues.forEach(i => { html += `<div class="fluid-row" onclick='editIssue(${JSON.stringify(i)})' style="cursor:pointer;"><div style="display:flex; flex-direction:column; gap:5px;"><span class="fluid-row-val">${i.title} (${i.category})</span><span class="fluid-row-label">By ${i.student_name} · Loc: ${i.location}</span></div><span class="badge" style="${i.status==='resolved'?'background:var(--neon-green);':'background:var(--purple); color:var(--white);'}">${i.status.toUpperCase()}</span></div>`; });
-         html += `</div></div></div>`; document.getElementById('canvas').innerHTML = html;
-      } catch(e) {}
-    }
-    
-    function selectPersonnel(userId) {
-       document.getElementById('ie-assignment').value = userId;
-       document.querySelectorAll('.personnel-card').forEach(c => c.classList.remove('selected'));
-       document.getElementById('pc-' + userId).classList.add('selected');
+        if (role === 'student') {
+          await fetch(`${API}/students`, { method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ name:u.name, department:document.getElementById('s-dept').value, year:parseInt(document.getElementById('s-year').value)||1, program:document.getElementById('s-program').value, user_id }) });
+        } else if (role === 'faculty') {
+          await fetch(`${API}/faculty`, { method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ name:u.name, department:document.getElementById('f-dept').value, designation:document.getElementById('f-desig').value, user_id }) });
+        } else if (role === 'worker') {
+          await fetch(`${API}/workers`, { method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ name:u.name, role_title:document.getElementById('w-role').value, department:document.getElementById('w-dept').value, user_id }) });
+        } else if (role === 'guard') {
+          await fetch(`${API}/guards`, { method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ name:u.name, badge_no:document.getElementById('g-badge').value, user_id }) });
+        }
+      } catch(e) { console.warn('Profile creation note:', e.message); }
+      
+      closeModal('modal-user');
+      await preloadUsers();
+      switchView('users');
     }
 
-    function editIssue(issue) {
-       document.getElementById('ie-id').value = issue.issue_id;
-       document.getElementById('ie-lbl-id').textContent = issue.issue_id;
-       document.getElementById('ie-status').value = issue.status;
-       document.getElementById('ie-assignment').value = issue.assigned_worker_id || '';
-       document.getElementById('ie-submit-btn').style.display = 'block';
-       document.getElementById('ie-loader').style.display = 'none';
-       
-       const type = issue.category==='security'?'guard':'worker';
-       const opts = allUsers.filter(u=>u.role===type);
-       
-       let h = '';
-       opts.forEach(o => { 
-           const activeCount = allIssues.filter(i => i.assigned_worker_id === o.user_id && i.status !== 'resolved').length;
-           const isSel = o.user_id === issue.assigned_worker_id ? 'selected' : '';
-           h += `<div class="personnel-card ${isSel}" id="pc-${o.user_id}" onclick="selectPersonnel(${o.user_id})">
-                   <span class="personnel-name">${o.name}</span>
-                   <span class="personnel-stats">Active Tickets: ${activeCount}</span>
-                 </div>`; 
-       });
-       if(!opts.length) h = '<p style="opacity:0.6;">No personnel available.</p>';
-       document.getElementById('ie-personnel-grid').innerHTML = h;
-       openModal('modal-issue-edit');
+    async function deleteUser(id, name) {
+      if (!confirm(`Delete user "${name}"? This is irreversible.`)) return;
+      const r = await fetch(`${API}/users/${id}`, { method:'DELETE' });
+      if(r.ok) { await preloadUsers(); switchView('users'); }
+    }
+
+    function openResetPassword(userId, userName) {
+      document.getElementById('rp-user-id').value   = userId;
+      document.getElementById('rp-user-name').textContent = `Reset password for: ${userName}`;
+      document.getElementById('rp-new').value        = '';
+      document.getElementById('rp-confirm').value    = '';
+      document.getElementById('rp-msg').style.display = 'none';
+      openModal('modal-reset-pw');
+    }
+
+    async function resetUserPassword() {
+      const userId      = document.getElementById('rp-user-id').value;
+      const new_password = document.getElementById('rp-new').value;
+      const confirm     = document.getElementById('rp-confirm').value;
+      const msg         = document.getElementById('rp-msg');
+      msg.style.display = 'block';
+      if (!new_password)              { msg.style.color='#EF476F'; msg.textContent='Enter a new password.'; return; }
+      if (new_password.length < 6)    { msg.style.color='#EF476F'; msg.textContent='Minimum 6 characters.'; return; }
+      if (new_password !== confirm)   { msg.style.color='#EF476F'; msg.textContent='Passwords do not match.'; return; }
+      const r = await fetch(`${API}/users/${userId}/reset-password`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ new_password })
+      });
+      const d = await r.json();
+      if (r.ok) {
+        msg.style.color = 'green'; msg.textContent = '✓ Password reset successfully.';
+        setTimeout(() => closeModal('modal-reset-pw'), 1500);
+      } else {
+        msg.style.color = '#EF476F'; msg.textContent = d.error || 'Failed.';
+      }
+    }
+
+    // ── 3. ISSUES (with filters and image view) ──────────────────────────────
+    async function renderIssues() {
+      await preloadIssues();
+      const severityOrder = { critical:0, high:1, medium:2, low:3 };
+      
+      const filtered = currentIssueFilter === 'all' ? allIssues : allIssues.filter(i => i.status === currentIssueFilter);
+      const sorted = [...filtered].sort((a,b) => (severityOrder[a.severity]??9) - (severityOrder[b.severity]??9));
+
+      let html = `
+        <div class="poster-card" style="padding:40px;">
+          <div class="poster-header" style="margin-bottom:10px;">
+            <h3 class="text-headline" style="font-size:2rem;">Live Dispatch</h3>
+            <div style="display:flex; gap:10px;">
+              <span class="badge" style="background:var(--bg-light);">${allIssues.length} Total</span>
+              <span class="badge" style="background:var(--purple); color:#fff;">${allIssues.filter(i=>i.status==='pending').length} Pending</span>
+              <span class="badge" style="background:#FF4D4D; color:#fff;">${allIssues.filter(i=>i.severity==='critical').length} Critical</span>
+            </div>
+          </div>
+          
+          <div class="filter-tabs">
+            ${['all','pending','assigned','in_progress','resolved'].map(f => `
+              <button class="ftab${currentIssueFilter===f?' active':''}" onclick="setIssueFilter('${f}')">${f.replace('_',' ').toUpperCase()}</button>`).join('')}
+          </div>
+          
+          <div style="border:1.5px solid rgba(0,0,0,0.06); border-radius:var(--radius-lg); overflow:hidden;">
+            ${!sorted.length ? '<p style="padding:30px; opacity:0.5; text-align:center;">No issues in this category.</p>' :
+            sorted.map(i => `
+              <div class="issue-row" onclick='editIssue(${JSON.stringify(i).replace(/'/g,"&apos;")})'>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                  <div>
+                    <p style="font-weight:700; font-size:1rem; margin-bottom:4px;">${i.title}</p>
+                    <p style="font-size:0.85rem; opacity:0.5;">${i.category.toUpperCase()} · ${i.location} · By ${i.student_name}</p>
+                  </div>
+                  <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+                    <span class="badge" style="background:${severityBadge(i.severity)[0]}; color:${severityBadge(i.severity)[1]};">${i.severity.toUpperCase()}</span>
+                    <span class="badge" style="background:${statusBadge(i.status)}; color:#fff;">${i.status.replace('_',' ').toUpperCase()}</span>
+                    ${i.has_image ? '<span title="Has photo" style="font-size:1.2rem;">📷</span>' : ''}
+                  </div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+      document.getElementById('canvas').innerHTML = html;
+    }
+
+    function severityBadge(sev) {
+      return {critical:['#FF4D4D','#fff'], high:['#FF8C00','#fff'], medium:['#FFB800','#000'], low:['#888','#fff']}[sev] || ['#ccc','#000'];
+    }
+    function statusBadge(s) {
+      return {pending:'#888', assigned:'#1A73E8', in_progress:'#FF8C00', resolved:'green'}[s] || '#ccc';
+    }
+
+    function setIssueFilter(f) {
+      currentIssueFilter = f;
+      renderIssues();
+    }
+
+    function selectPersonnel(userId) {
+      document.getElementById('ie-assignment').value = userId;
+      document.querySelectorAll('.personnel-card').forEach(c => c.classList.remove('selected'));
+      const el = document.getElementById('pc-' + userId);
+      if(el) el.classList.add('selected');
+    }
+
+    async function editIssue(issue) {
+      document.getElementById('ie-id').value = issue.issue_id;
+      document.getElementById('ie-title-h').textContent = issue.title;
+      document.getElementById('ie-category').textContent = issue.category.toUpperCase();
+      document.getElementById('ie-location').textContent = issue.location;
+      document.getElementById('ie-severity').textContent = issue.severity.toUpperCase();
+      document.getElementById('ie-reporter').textContent = issue.student_name;
+      document.getElementById('ie-desc').textContent = issue.description || '—';
+      document.getElementById('ie-status').value = issue.status;
+      document.getElementById('ie-assignment').value = issue.assigned_id || '';
+      document.getElementById('ie-notes').value = issue.admin_notes || '';
+      
+      // Load image if available
+      const imgWrap = document.getElementById('ie-image-wrap');
+      if (issue.has_image) {
+        try {
+          const imgR = await fetch(`${API}/issues/${issue.issue_id}`);
+          const full = await imgR.json();
+          if(full.image_data) {
+            document.getElementById('ie-image').src = full.image_data;
+            imgWrap.style.display = 'block';
+          } else imgWrap.style.display = 'none';
+        } catch(e) { imgWrap.style.display = 'none'; }
+      } else { imgWrap.style.display = 'none'; }
+      
+      // Build personnel grid
+      const type = issue.category === 'security' ? 'guard' : 'worker';
+      const opts = allUsers.filter(u => u.role === type);
+      let h = '';
+      opts.forEach(o => {
+        const activeCount = allIssues.filter(i => i.assigned_id === o.user_id && i.status !== 'resolved').length;
+        const isSel = o.user_id === issue.assigned_id ? 'selected' : '';
+        h += `<div class="personnel-card ${isSel}" id="pc-${o.user_id}" onclick="selectPersonnel(${o.user_id})">
+                <span class="personnel-name">${o.name}</span>
+                <span class="personnel-stats">${type.toUpperCase()} · ${activeCount} Active</span>
+              </div>`;
+      });
+      if(!opts.length) h = `<p style="opacity:0.6; font-size:0.9rem;">No ${type} available in system.</p>`;
+      document.getElementById('ie-personnel-grid').innerHTML = h;
+      openModal('modal-issue-edit');
     }
 
     async function submitIssueUpdate() {
-       const assigned_worker_id = parseInt(document.getElementById('ie-assignment').value) || null;
-       const btn = document.getElementById('ie-submit-btn');
-       const loader = document.getElementById('ie-loader');
-       
-       btn.style.display = 'none';
-       loader.style.display = 'block';
-       const workerName = allUsers.find(u => u.user_id === assigned_worker_id)?.name || 'Personnel';
-       loader.textContent = `Dispatching ${workerName}...`;
-
-       setTimeout(async () => {
-           const u = { status: document.getElementById('ie-status').value, assigned_worker_id };
-           const id = document.getElementById('ie-id').value;
-           const r = await fetch(`${API}/issues/${id}/status`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(u) });
-           if(r.ok){ closeModal('modal-issue-edit'); switchView('issues'); }
-           btn.style.display = 'block'; loader.style.display = 'none';
-       }, 500);
+      const assigned_id = parseInt(document.getElementById('ie-assignment').value) || null;
+      const id = document.getElementById('ie-id').value;
+      const status = document.getElementById('ie-status').value;
+      const admin_notes = document.getElementById('ie-notes').value.trim();
+      const assigned_name = assigned_id ? (allUsers.find(u => u.user_id === assigned_id)?.name || null) : null;
+      const assigned_role = assigned_id ? (allUsers.find(u => u.user_id === assigned_id)?.role || null) : null;
+      
+      const r = await fetch(`${API}/issues/${id}/assign`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ assigned_role, assigned_id, assigned_name, admin_notes })
+      });
+      const r2 = await fetch(`${API}/issues/${id}/status`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ status })
+      });
+      if(r.ok && r2.ok) { closeModal('modal-issue-edit'); await preloadIssues(); renderIssues(); }
     }
 
-    // 4. Notices
+    // ── 4. BROADCASTS ───────────────────────────────────────────────────────
     async function renderNotices() {
-      let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card poster-green" style="grid-column:1/-1; padding:40px;">
-         <h2 class="text-headline">NEW BROADCAST</h2>
-         <div style="margin-top:30px; max-width:600px;">
-           <input id="n-title" type="text" placeholder="Subject" class="form-input" style="background:var(--white);">
-           <input id="n-content" type="text" placeholder="Detailed Body" class="form-input" style="background:var(--white);">
-           <select id="n-role" class="form-input" style="background:var(--white);"><option value="*">All Users</option><option value="student">Students Only</option><option value="faculty">Faculty Only</option></select>
-           <button class="massive-btn" style="background:var(--black); color:var(--white);" onclick="submitNotice()">Broadcast Message</button>
-         </div>
-      </div></div>`;
+      let html = `
+        <div class="poster-card poster-dark" style="padding:40px;">
+          <h2 class="text-headline" style="margin-bottom:8px;">BROADCAST MESSAGE</h2>
+          <p style="opacity:0.6; margin-bottom:25px;">Message is broadcast to all selected users. Images supported.</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; max-width:700px;">
+            <input id="n-title" type="text" placeholder="Subject / Title" class="form-input" style="grid-column:1/-1;">
+            <textarea id="n-content" class="form-input" placeholder="Detailed message body..." style="height:100px; resize:vertical; grid-column:1/-1;"></textarea>
+            <select id="n-role" class="form-input" style="margin:0;">
+              <option value="all">All Users</option>
+              <option value="student">Students Only</option>
+              <option value="faculty">Faculty Only</option>
+              <option value="worker">Workers Only</option>
+              <option value="guard">Guards Only</option>
+            </select>
+            <input type="date" id="n-valid" class="form-input" style="margin:0;" title="Valid Until (optional)">
+          </div>
+          <!-- Image upload -->
+          <div style="margin-top:15px; max-width:700px;">
+            <label style="font-weight:700; font-size:0.85rem; opacity:0.6; text-transform:uppercase; display:block; margin-bottom:8px;">Attach Image (optional)</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="file" id="n-image" accept="image/*" style="flex:1; background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.15); border-radius:var(--radius-lg); padding:10px 15px; color:var(--white); font-size:0.9rem;" onchange="previewNoticeImage()">
+              <button onclick="clearNoticeImage()" style="background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.2); border-radius:var(--radius-pill); color:var(--white); padding:8px 16px; cursor:pointer;">Clear</button>
+            </div>
+            <div id="n-img-preview" style="margin-top:12px; display:none;">
+              <img id="n-img-tag" style="max-height:150px; border-radius:var(--radius-md); border:2px solid rgba(255,255,255,0.2);">
+            </div>
+          </div>
+          <button class="massive-btn" style="background:var(--neon-green); color:var(--black); margin-top:20px; max-width:700px;" onclick="submitNotice()">Broadcast &rarr;</button>
+        </div>
+        <div class="poster-card" style="padding:40px; margin-top:20px;" id="notice-history">Loading notices...</div>`;
       document.getElementById('canvas').innerHTML = html;
+      
+      // Load existing notices
+      try {
+        const r = await fetch(`${API}/notices`);
+        const notices = await r.json();
+        let nh = `<div class="poster-header" style="margin-bottom:20px;">
+          <h3 class="text-headline" style="font-size:1.8rem;">Broadcast History</h3>
+          <button onclick="clearAllNotices()" class="nav-pill" style="font-size:0.85rem; padding:8px 18px;">Clear All</button>
+        </div>`;
+        if (!notices.length) nh += '<p style="opacity:0.5;">No broadcasts yet.</p>';
+        notices.forEach(n => {
+          nh += `<div class="fluid-row" style="flex-direction:column; align-items:flex-start; gap:6px; padding:15px 0;">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
+              <div style="flex:1;">
+                <span style="font-weight:700; font-size:1rem;">${n.title}</span>
+                ${n.image_data ? '<span style="font-size:0.8rem; opacity:0.5; margin-left:8px;">📎 Has image</span>' : ''}
+              </div>
+              <div style="display:flex;gap:8px; margin-left:10px;">
+                <span class="badge" style="background:var(--bg-light);">${n.target_role === 'all' ? 'ALL' : n.target_role.toUpperCase()}</span>
+                <button onclick="deleteNotice(${n.notice_id})" style="background:none; border:none; cursor:pointer; opacity:0.4; font-size:1rem;" title="Delete">🗑</button>
+              </div>
+            </div>
+            <span style="opacity:0.6; font-size:0.9rem; line-height:1.5;">${n.content}</span>
+            <span style="font-size:0.78rem; opacity:0.4;">${new Date(n.date_posted).toLocaleString()}</span>
+          </div>`;
+        });
+        document.getElementById('notice-history').innerHTML = nh;
+      } catch(e) {}
     }
     
+    function previewNoticeImage() {
+      const file = document.getElementById('n-image').files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        document.getElementById('n-img-tag').src = reader.result;
+        document.getElementById('n-img-preview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+    function clearNoticeImage() {
+      document.getElementById('n-image').value = '';
+      document.getElementById('n-img-preview').style.display = 'none';
+      document.getElementById('n-img-tag').src = '';
+    }
     async function submitNotice() {
-       const body = { title:document.getElementById('n-title').value, content:document.getElementById('n-content').value, target_role:document.getElementById('n-role').value, created_by:session.user_id };
-       const r = await fetch(`${API}/notices`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-       if(r.ok){ switchView('overview'); }
+       const title   = document.getElementById('n-title').value.trim();
+       const content = document.getElementById('n-content').value.trim();
+       if(!title || !content) return alert('Fill in the subject and message.');
+       const target_role = document.getElementById('n-role').value;
+       const valid_until = document.getElementById('n-valid')?.value || null;
+       // Encode image if present
+       let image_data = null;
+       const imgFile = document.getElementById('n-image')?.files?.[0];
+       if (imgFile) {
+         image_data = await new Promise(resolve => {
+           const r2 = new FileReader();
+           r2.onloadend = () => resolve(r2.result);
+           r2.readAsDataURL(imgFile);
+         });
+       }
+       const r = await fetch(`${API}/notices`, { method:'POST', headers:{'Content-Type':'application/json'},
+         body: JSON.stringify({ title, content, target_role, valid_until, image_data, created_by: session.user_id }) });
+       if(r.ok){ document.getElementById('n-title').value=''; document.getElementById('n-content').value=''; clearNoticeImage(); renderNotices(); }
+    }
+    async function deleteNotice(id) {
+      if (!confirm('Delete this broadcast?')) return;
+      await fetch(`${API}/notices/${id}`, { method:'DELETE' });
+      renderNotices();
+    }
+    async function clearAllNotices() {
+      if (!confirm('Delete ALL broadcast history? This cannot be undone.')) return;
+      await fetch(`${API}/notices`, { method:'DELETE' });
+      renderNotices();
     }
 
-    // 5. Blueprint
+    // ── 5. CAMPUS BLUEPRINT ──────────────────────────────────────────────────
     async function renderBlueprint() {
-      let html = `<div class="grid-masonry" style="padding:0;">
-        <div class="poster-card poster-dark" style="grid-column:1/-1; padding:40px;">
-           <h2 class="text-headline">CAMPUS BLUEPRINT</h2>
-           <p style="opacity:0.6; margin-top:10px;">Upload a campus map image. It will be broadcasted to all students, faculty, and workers.</p>
-           
-           <div style="margin-top:30px; margin-bottom:30px; display:flex; gap:10px;">
-             <input type="file" id="bp-upload" accept="image/*" class="form-input" style="background:var(--white); border:none; padding:10px;">
-             <button class="massive-btn" style="background:var(--neon-green); color:var(--black); width:auto; padding:10px 40px;" onclick="uploadBlueprint()">Publish Map &rarr;</button>
-           </div>
-           
-           <div id="bp-preview" style="background:rgba(255,255,255,0.05); border-radius:var(--radius-lg); padding:20px; text-align:center;">
-              <span style="opacity:0.5;">Loading Current Blueprint...</span>
-           </div>
-        </div>
+      let html = `<div class="poster-card poster-dark" style="padding:40px;">
+         <h2 class="text-headline" style="margin-bottom:10px;">CAMPUS BLUEPRINT</h2>
+         <p style="opacity:0.6; margin-bottom:25px;">Upload an image to broadcast it to all terminals.</p>
+         
+         <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:25px;">
+           <input type="file" id="bp-upload" accept="image/*" class="form-input" style="flex:1; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:var(--white); padding:12px;">
+           <button class="massive-btn" style="background:var(--neon-green); color:var(--black); width:auto; padding:10px 30px;" onclick="uploadBlueprint()">Publish Map &rarr;</button>
+           <button class="massive-btn" style="background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); width:auto; padding:10px 30px;" onclick="clearBlueprint()">Clear Map</button>
+         </div>
+         
+         <div id="bp-preview" style="background:rgba(255,255,255,0.05); border-radius:var(--radius-lg); padding:20px; text-align:center; min-height:200px; display:flex; align-items:center; justify-content:center;">
+           <span style="opacity:0.5;">Loading...</span>
+         </div>
       </div>`;
       document.getElementById('canvas').innerHTML = html;
       
       const r = await fetch(`${API}/settings/blueprint`);
       const data = await r.json();
       if(data.blueprint) {
-         document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg); border: 2px solid rgba(255,255,255,0.1);">`;
+        document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg);">`;
       } else {
-         document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.5;">No blueprint currently published.</span>`;
+        document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.5;">No blueprint published yet.</span>`;
       }
     }
 
     async function uploadBlueprint() {
        const fileInput = document.getElementById('bp-upload');
-       if(!fileInput.files || !fileInput.files[0]) { alert("Please select an image first."); return; }
-       
-       const file = fileInput.files[0];
+       if(!fileInput.files?.[0]) { alert('Please select an image file.'); return; }
        const reader = new FileReader();
-       document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.5;">Publishing Data...</span>`;
-       
+       document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.5;">Publishing...</span>`;
        reader.onloadend = async () => {
-           const base64Str = reader.result;
-           const r = await fetch(`${API}/settings/blueprint`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({blueprint: base64Str}) });
-           if(r.ok) { alert("Campus Blueprint Published! All terminals synced."); renderBlueprint(); }
-           else { const d=await r.json(); alert("Error: "+d.error); }
+           const r = await fetch(`${API}/settings/blueprint`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({blueprint: reader.result}) });
+           if(r.ok) { alert('Campus Blueprint Published!'); renderBlueprint(); }
        };
-       reader.readAsDataURL(file);
+       reader.readAsDataURL(fileInput.files[0]);
+    }
+
+    async function clearBlueprint() {
+      if (!confirm('Clear the campus blueprint? All terminals will show nothing.')) return;
+      await fetch(`${API}/settings/blueprint`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({blueprint:''}) });
+      renderBlueprint();
     }
   </script>
 
   <!-- Settings Modal -->
   <div class="module-modal" id="modal-settings">
-    <div class="modal-content">
-      <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
-      <h2 class="text-headline" style="margin-bottom:30px;">SYSTEM SETTINGS</h2>
-      <div class="setting-row">
-        <span class="setting-label">Language / भाषा</span>
-        <select class="form-input" style="width:200px; margin:0;" id="lang-selector">
-           <option value="en">English</option>
-           <option value="hi">Hindi / हिंदी</option>
-        </select>
+    <div class="modal-content" style="max-width:520px;">
+      <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">\u2715</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">SETTINGS</h2>
+      <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:12px;">
+        <span class="setting-label">\ud83d\udd11 My Password</span>
+        <p style="font-size:0.85rem; opacity:0.6;">Change your own admin account password.</p>
+        <input type="password" id="pw-old" class="form-input" style="margin:0;" placeholder="Current Password">
+        <input type="password" id="pw-new" class="form-input" style="margin:0;" placeholder="New Password (min 6 chars)">
+        <input type="password" id="pw-confirm" class="form-input" style="margin:0;" placeholder="Confirm New Password">
+        <div id="pw-msg" style="font-size:0.88rem; font-weight:600; display:none;"></div>
+        <button class="nav-pill" style="background:var(--black); color:white; border:none;" onclick="changeOwnPassword()">Update Password</button>
       </div>
-      <div class="setting-row">
-        <span class="setting-label">External Integrations</span>
-        <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
+      <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px;">
+        <span class="setting-label">\ud83d\udd17 Link Google Account</span>
+        <div style="display:flex; gap:10px; width:100%;">
             <input type="email" id="link-g-email" class="form-input" style="margin:0; flex:1;" placeholder="Google Email">
-            <button class="nav-pill" style="border-radius:var(--radius-lg);" onclick="linkGoogleAccount()">Bind Account</button>
+            <button class="nav-pill" style="border-radius:var(--radius-lg); white-space:nowrap;" onclick="linkGoogleAccount()">Bind Account</button>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Admin Reset Password Modal -->
+  <div class="module-modal" id="modal-reset-pw">
+    <div class="modal-content" style="max-width:460px;">
+      <button class="close-btn" onclick="closeModal('modal-reset-pw')">\u2715</button>
+      <h2 class="text-headline" style="margin-bottom:8px; font-size:1.6rem;">RESET PASSWORD</h2>
+      <p id="rp-user-name" style="opacity:0.6; margin-bottom:25px; font-size:0.9rem;"></p>
+      <input type="hidden" id="rp-user-id">
+      <label style="font-weight:700; font-size:0.85rem; display:block; margin-bottom:6px;">New Password</label>
+      <input type="password" id="rp-new" class="form-input" placeholder="Min 6 characters">
+      <label style="font-weight:700; font-size:0.85rem; display:block; margin-bottom:6px;">Confirm Password</label>
+      <input type="password" id="rp-confirm" class="form-input" placeholder="Repeat new password">
+      <div id="rp-msg" style="font-size:0.88rem; font-weight:600; margin-bottom:10px; display:none;"></div>
+      <button class="massive-btn" onclick="resetUserPassword()">Reset Password \u2192</button>
+    </div>
+  </div>
+
+  <script>
+    async function changeOwnPassword() {
+      const old_password = document.getElementById('pw-old').value;
+      const new_password = document.getElementById('pw-new').value;
+      const confirm      = document.getElementById('pw-confirm').value;
+      const msg          = document.getElementById('pw-msg');
+      msg.style.display  = 'block';
+      if (!old_password || !new_password) { msg.style.color='#EF476F'; msg.textContent='Fill in all fields.'; return; }
+      if (new_password.length < 6)        { msg.style.color='#EF476F'; msg.textContent='Min 6 characters required.'; return; }
+      if (new_password !== confirm)       { msg.style.color='#EF476F'; msg.textContent='Passwords do not match.'; return; }
+      const r = await fetch('/api/auth/change-password', { method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ user_id: session.user_id, old_password, new_password }) });
+      const d = await r.json();
+      if (r.ok) { msg.style.color='green'; msg.textContent='\u2713 Password updated.'; ['pw-old','pw-new','pw-confirm'].forEach(id=>document.getElementById(id).value=''); }
+      else { msg.style.color='#EF476F'; msg.textContent = d.error||'Failed.'; }
+    }
+  </script>
 </body>
 </html>

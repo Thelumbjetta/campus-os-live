@@ -149,6 +149,42 @@ function initSchema() {
             setting_key   TEXT PRIMARY KEY,
             setting_value TEXT
         )`);
+
+        /* ── Security Alerts ── */
+        db.run(`CREATE TABLE IF NOT EXISTS security_alerts (
+            alert_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+            alert_type  TEXT NOT NULL,
+            location    TEXT NOT NULL,
+            details     TEXT,
+            severity    TEXT DEFAULT 'medium',
+            resolved    INTEGER DEFAULT 0,
+            resolved_at DATETIME,
+            issued_at   DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        /* ── Guard Schedules ── */
+        db.run(`CREATE TABLE IF NOT EXISTS guard_schedules (
+            schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guard_id    INTEGER REFERENCES guards(guard_id),
+            shift_date  TEXT NOT NULL,
+            shift_start TEXT NOT NULL,
+            shift_end   TEXT NOT NULL,
+            duty_area   TEXT NOT NULL,
+            post_no     TEXT DEFAULT 'A'
+        )`);
+
+        /* ── Worker Duties ── */
+        db.run(`CREATE TABLE IF NOT EXISTS worker_duties (
+            duty_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            worker_id        INTEGER REFERENCES workers(worker_id),
+            duty_date        TEXT NOT NULL,
+            start_time       TEXT NOT NULL,
+            end_time         TEXT NOT NULL,
+            task_description TEXT NOT NULL,
+            location         TEXT,
+            completed        INTEGER DEFAULT 0
+        )`);
+
         db.run(`CREATE TABLE IF NOT EXISTS query_replies (
             reply_id    INTEGER PRIMARY KEY AUTOINCREMENT,
             pq_id       INTEGER REFERENCES public_queries(pq_id) ON DELETE CASCADE,

@@ -9,6 +9,17 @@
     body { background-color: var(--white); }
     .top-section { background: var(--bg-light); border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; padding-bottom: 20px; margin-bottom: 30px; }
     .hero-panel { display: flex; justify-content: space-between; align-items: center; padding: 40px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 30px; }
+    
+    .alert-card { padding: 20px; border-radius: var(--radius-lg); border-left: 5px solid #ccc; margin-bottom: 12px; background: var(--white); border: 1.5px solid rgba(0,0,0,0.07); transition: all 0.2s; }
+    .alert-card.critical { border-left-color: #FF4D4D; background: rgba(255,77,77,0.03); }
+    .alert-card.high { border-left-color: #FF8C00; background: rgba(255,140,0,0.03); }
+    .alert-card.medium { border-left-color: #FFB800; }
+    .alert-card.low { border-left-color: #888; }
+    
+    .status-badge-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    
+    .shift-card { padding: 20px; border-radius: var(--radius-lg); border: 1.5px solid rgba(0,0,0,0.07); margin-bottom:12px; display:grid; grid-template-columns: 80px 1fr auto; gap:15px; align-items:center; }
+    .shift-time { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; }
   </style>
 </head>
 <body>
@@ -20,119 +31,304 @@
       </a>
       <div style="display:flex; gap:15px; align-items:center;">
         <span class="nav-pill" style="border:none; box-shadow:none; background:transparent;" id="lbl-name">Guard</span>
-        <button class="nav-pill filter-btn active" onclick="switchView('overview')">Patrol Queue</button>
-        <button class="nav-pill filter-btn" onclick="switchView('blueprint')">Campus Map</button>
         <button class="nav-icon-btn" onclick="document.getElementById('modal-settings').classList.add('open')">⚙</button>
         <button class="nav-pill" onclick="logout()" style="background:var(--black); color:var(--white); box-shadow:none;">Logout</button>
       </div>
     </nav>
+    <div class="container stagger-up d-2" style="margin-top:20px;">
+      <div class="filter-ribbon">
+        <button class="filter-btn active" data-view="queue" onclick="switchView('queue')">My Queue</button>
+        <button class="filter-btn" data-view="schedule" onclick="switchView('schedule')">Shift Schedule</button>
+        <button class="filter-btn" data-view="alerts" onclick="switchView('alerts')">Security Alerts</button>
+        <button class="filter-btn" data-view="blueprint" onclick="switchView('blueprint')">Campus Map</button>
+      </div>
+    </div>
   </div>
 
   <div class="container stagger-up d-4">
-      <div id="canvas" class="dashboard-canvas">
-         <div class="hero-panel"><div><p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Surveillance Tracker</p><h1 class="text-headline" style="font-size:3rem;">Security Dashboard</h1></div></div>
-         <div class="grid-masonry" style="padding:0;">
-            <div class="poster-card poster-green" id="box-tasks" style="grid-column: 1/-1; padding:40px;">Loading tasks...</div>
-         </div>
-      </div>
+    <div id="canvas" class="dashboard-canvas"></div>
   </div>
 
+  <!-- Update Status Modal -->
   <div class="module-modal" id="modal-task">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('modal-task')">✕</button>
-      <h2 class="text-headline" style="margin-bottom:30px;">UPDATE STATUS</h2>
+      <h2 class="text-headline" style="margin-bottom:10px;" id="tk-title"></h2>
+      <div style="background:var(--bg-light); border-radius:var(--radius-lg); padding:20px; margin-bottom:20px;" id="tk-detail"></div>
       <input type="hidden" id="tk-id">
-      <h3 class="text-headline" id="tk-title" style="margin-bottom:20px;"></h3>
+      <label style="font-weight:700; font-size:0.85rem; opacity:0.5; text-transform:uppercase; display:block; margin-bottom:8px;">Update Status</label>
       <select id="tk-status" class="form-input">
-        <option value="assigned">Assigned</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
+        <option value="assigned">Assigned</option>
+        <option value="in_progress">In Progress</option>
+        <option value="resolved">Resolved</option>
       </select>
-      <button class="massive-btn" style="background:var(--black);" onclick="submitUpdate()">Save State</button>
+      <button class="massive-btn" style="background:var(--black);" onclick="submitUpdate()">Save & Sync</button>
+    </div>
+  </div>
+
+  <!-- File Alert Modal -->
+  <div class="module-modal" id="modal-alert">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('modal-alert')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:25px;">FILE SECURITY ALERT</h2>
+      <select id="al-type" class="form-input">
+        <option>Unauthorized Access</option>
+        <option>Suspicious Person</option>
+        <option>Vehicle Alert</option>
+        <option>Fire Alarm</option>
+        <option>Equipment Tampering</option>
+        <option>Medical Emergency</option>
+        <option>Other</option>
+      </select>
+      <input id="al-location" class="form-input" placeholder="Location (e.g. Block A Gate)" type="text">
+      <textarea id="al-details" class="form-input" placeholder="Describe the situation in detail..." style="height:100px; resize:vertical;"></textarea>
+      <select id="al-severity" class="form-input">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+        <option value="critical">Critical</option>
+      </select>
+      <button class="massive-btn" style="background:#FF4D4D;" onclick="submitAlert()">File Alert &rarr;</button>
     </div>
   </div>
 
   <script>
     const API = '/api';
-    let session = null;
-    
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    let session = null, guardId = null;
+
+    function openModal(i) { document.getElementById(i).classList.add('open'); }
+    function closeModal(i) { document.getElementById(i).classList.remove('open'); }
     function logout() { sessionStorage.clear(); window.location.href='index.html'; }
     async function linkGoogleAccount() {
        const google_email = document.getElementById('link-g-email').value.trim();
        if(!google_email) return;
        const r = await fetch(`${API}/auth/google-link`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id: session.user_id, google_email}) });
        const d = await r.json();
-       if(r.ok) { alert('Successfully linked to Google Account: ' + google_email); }
-       else { alert('ERROR: ' + d.error); }
+       if(r.ok) { alert('Linked: ' + google_email); } else { alert('ERROR: ' + d.error); }
     }
 
     window.onload = async () => {
       session = JSON.parse(sessionStorage.getItem('user') || 'null');
       if (!session || session.role !== 'guard') { window.location.href = 'index.html'; return; }
       document.getElementById('lbl-name').textContent = session.name;
-      await fetchTasks();
+      
+      // Get guard profile id
+      try {
+        const guards = await fetch(`${API}/guards`).then(r=>r.json());
+        const myGuard = guards.find(g => g.user_id === session.user_id);
+        guardId = myGuard?.guard_id;
+      } catch(e) {}
+      
+      await renderQueue();
     };
 
-    async function fetchTasks() {
-       try {
-         const r = await fetch(`${API}/issues?worker_id=${session.user_id}`); const issues = await r.json();
-         let html = `
-         <div class="hero-panel"><div><p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Surveillance Tracker</p><h1 class="text-headline" style="font-size:3rem;">Security Dashboard</h1></div></div>
-         <div class="grid-masonry" style="padding:0;">
-            <div class="poster-card poster-green" id="box-tasks" style="grid-column: 1/-1; padding:40px;">
-           <div class="poster-header"><h3 class="poster-title text-headline">Active Queue</h3></div><div class="poster-content" style="margin-top:40px;">`;
-         if(!issues.length) html += '<p style="opacity:0.6;">No pending security assignments.</p>';
-         issues.forEach(i => {
-           html += `<div class="fluid-row" style="cursor:pointer; border-bottom-color:rgba(0,0,0,0.1);" onclick='editTask(${JSON.stringify(i)})'>
-             <div style="display:flex; flex-direction:column; gap:5px;"><span class="fluid-row-val">${i.title} (${i.location})</span><span class="fluid-row-label">${i.category} · ${i.severity.toUpperCase()}</span></div>
-             <span class="badge" style="background:var(--black); color:var(--white);">${i.status.toUpperCase()}</span>
-           </div>`;
-         });
-         document.getElementById('canvas').innerHTML = html + `</div></div></div>`;
-       } catch(e) {}
+    async function switchView(viewName) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
+      const canvas = document.getElementById('canvas');
+      canvas.style.opacity = 0;
+      setTimeout(async () => {
+        if(viewName==='queue') await renderQueue();
+        if(viewName==='schedule') await renderSchedule();
+        if(viewName==='alerts') await renderAlerts();
+        if(viewName==='blueprint') await renderBlueprint();
+        canvas.style.opacity = 1;
+      }, 300);
     }
 
-    function switchView(viewName) {
-       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-       event.target.classList.add('active');
-       const canvas = document.getElementById('canvas'); canvas.style.opacity = 0;
-       setTimeout(async () => {
-         if(viewName === 'overview') await fetchTasks();
-         if(viewName === 'blueprint') await renderBlueprint();
-         canvas.style.opacity = 1;
-       }, 300);
+    // ── 1. ASSIGNED QUEUE ────────────────────────────────────────────────────
+    async function renderQueue() {
+      document.getElementById('canvas').innerHTML = `<div class="poster-card poster-green" id="box-tasks" style="padding:40px;">Loading...</div>`;
+      try {
+        const r = await fetch(`${API}/issues?assigned_id=${session.user_id}`);
+        const issues = await r.json();
+        
+        const active = issues.filter(i => i.status !== 'resolved');
+        const done = issues.filter(i => i.status === 'resolved');
+        
+        let html = `<div class="poster-header" style="margin-bottom:25px;">
+          <h3 class="text-headline" style="font-size:2rem;">Security Queue</h3>
+          <div style="display:flex;gap:8px;">
+            <span class="badge" style="background:rgba(0,0,0,0.1);">${active.length} Active</span>
+            <span class="badge" style="background:rgba(0,0,0,0.05);">${done.length} Done</span>
+          </div>
+        </div>`;
+        
+        if (!issues.length) {
+          html += '<p style="opacity:0.5; padding:20px 0;">No assignments pending. You are clear.</p>';
+        } else {
+          active.forEach(i => {
+            html += `<div class="fluid-row" style="border-bottom-color:rgba(0,0,0,0.08); cursor:pointer;" onclick='editTask(${JSON.stringify(i).replace(/'/g,"&apos;")})'>
+              <div>
+                <p style="font-weight:700; font-size:1rem; margin-bottom:4px;">${i.title}</p>
+                <p style="font-size:0.85rem; opacity:0.6;">${i.location} · ${i.category.toUpperCase()}</p>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span class="badge" style="background:${sevBg(i.severity)};color:${i.severity==='medium'?'#000':'#fff'};">${i.severity.toUpperCase()}</span>
+                <span class="badge" style="background:${stBg(i.status)};color:#fff;">${i.status.replace('_',' ').toUpperCase()}</span>
+              </div>
+            </div>`;
+          });
+          if (done.length) {
+            html += `<details style="margin-top:15px; opacity:0.6;"><summary style="cursor:pointer; font-weight:700; font-size:0.85rem; text-transform:uppercase; padding:10px 0;">Resolved (${done.length})</summary>`;
+            done.forEach(i => html += `<div class="fluid-row" style="border-bottom-color:rgba(0,0,0,0.05);"><span style="font-weight:600;">${i.title}</span><span class="badge" style="background:green;color:#fff;">RESOLVED</span></div>`);
+            html += `</details>`;
+          }
+        }
+        document.getElementById('box-tasks').innerHTML = html;
+      } catch(e) { document.getElementById('box-tasks').innerHTML = '<p style="color:red;">Error loading queue.</p>'; }
     }
-    
-    // Campus Map Blueprint
-    async function renderBlueprint() {
-      let html = `<div class="grid-masonry" style="padding:0;">
-        <div class="poster-card poster-light" style="grid-column:1/-1; padding:40px; background:var(--white); color:var(--black); border:var(--border-line);">
-           <h2 class="text-headline">CAMPUS BLUEPRINT</h2>
-           <div id="bp-preview" style="margin-top:20px; background:rgba(0,0,0,0.02); border-radius:var(--radius-lg); padding:20px; text-align:center;">
-              <span style="opacity:0.5;">Loading Map Data...</span>
-           </div>
-        </div>
-      </div>`;
-      document.getElementById('canvas').innerHTML = html;
-      
-      const r = await fetch(`${API}/settings/blueprint`);
-      const data = await r.json();
-      if(data.blueprint) {
-         document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg); border: 2px solid rgba(0,0,0,0.1);">`;
-      } else {
-         document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.6;">The internal campus map has not been published yet. Check back later.</span>`;
-      }
-    }
+
+    function sevBg(s) { return {critical:'#FF4D4D',high:'#FF8C00',medium:'#FFB800',low:'#888'}[s]||'#ccc'; }
+    function stBg(s) { return {pending:'#888',assigned:'#1A73E8',in_progress:'#FF8C00',resolved:'green'}[s]||'#ccc'; }
 
     function editTask(i) {
-       document.getElementById('tk-id').value = i.issue_id; document.getElementById('tk-title').textContent = i.title; document.getElementById('tk-status').value = i.status; openModal('modal-task');
+      document.getElementById('tk-id').value = i.issue_id;
+      document.getElementById('tk-title').textContent = i.title;
+      document.getElementById('tk-detail').innerHTML = `
+        <p style="font-size:0.8rem; opacity:0.5; text-transform:uppercase; margin-bottom:4px;">Location</p>
+        <p style="font-weight:700; margin-bottom:12px;">${i.location}</p>
+        <p style="font-size:0.8rem; opacity:0.5; text-transform:uppercase; margin-bottom:4px;">Description</p>
+        <p>${i.description || '—'}</p>`;
+      document.getElementById('tk-status').value = i.status;
+      openModal('modal-task');
     }
     
     async function submitUpdate() {
-       const u = { status: document.getElementById('tk-status').value };
-       const id = document.getElementById('tk-id').value;
-       const r = await fetch(`${API}/issues/${id}/status`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(u) });
-       if(r.ok){ closeModal('modal-task'); fetchTasks(); }
+      const id = document.getElementById('tk-id').value;
+      const status = document.getElementById('tk-status').value;
+      const r = await fetch(`${API}/issues/${id}/status`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status}) });
+      if(r.ok){ closeModal('modal-task'); renderQueue(); }
+    }
+
+    // ── 2. SHIFT SCHEDULE ────────────────────────────────────────────────────
+    async function renderSchedule() {
+      document.getElementById('canvas').innerHTML = `<div class="poster-card" id="box-schedule" style="padding:40px;">Loading schedule...</div>`;
+      try {
+        const r = await fetch(`${API}/guard-schedules${guardId?'?guard_id='+guardId:''}`);
+        const shifts = await r.json();
+        const today = new Date().toISOString().split('T')[0];
+        
+        let html = `<div class="poster-header" style="margin-bottom:25px;">
+          <h3 class="text-headline" style="font-size:2rem;">Shift Schedule</h3>
+          <span class="badge" style="background:var(--bg-light);">${shifts.length} Shifts</span>
+        </div>`;
+        
+        if (!shifts.length) {
+          html += '<p style="opacity:0.5;">No shifts scheduled.</p>';
+        } else {
+          const grouped = {};
+          shifts.forEach(s => {
+            if (!grouped[s.shift_date]) grouped[s.shift_date] = [];
+            grouped[s.shift_date].push(s);
+          });
+          
+          Object.keys(grouped).sort().forEach(date => {
+            const isToday = date === today;
+            html += `<div style="margin-bottom:20px;">
+              <div class="badge" style="display:inline-flex; align-items:center; gap:6px; margin-bottom:12px; background:${isToday?'var(--neon-green)':'var(--bg-light)'}; color:${isToday?'#000':'inherit'};">
+                ${isToday?'● TODAY — ':''}${new Date(date+'T12:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'})}
+              </div>`;
+            grouped[date].forEach(s => {
+              html += `<div class="shift-card">
+                <div style="text-align:center;">
+                  <div class="shift-time">${s.shift_start}</div>
+                  <div style="font-size:0.7rem; opacity:0.5;">to ${s.shift_end}</div>
+                </div>
+                <div>
+                  <p style="font-weight:700; font-size:1.05rem; margin-bottom:4px;">${s.duty_area}</p>
+                  <p style="opacity:0.5; font-size:0.85rem;">Post: ${s.post_no}</p>
+                </div>
+                ${isToday?`<span class="badge" style="background:var(--purple); color:#fff;">ACTIVE</span>`:''}
+              </div>`;
+            });
+            html += `</div>`;
+          });
+        }
+        document.getElementById('box-schedule').innerHTML = html;
+      } catch(e) { document.getElementById('box-schedule').innerHTML = '<p style="color:red;">Error loading schedule.</p>'; }
+    }
+
+    // ── 3. SECURITY ALERTS ───────────────────────────────────────────────────
+    async function renderAlerts() {
+      document.getElementById('canvas').innerHTML = `<div class="poster-card" id="box-alerts" style="padding:40px;">Loading alerts...</div>`;
+      try {
+        const r = await fetch(`${API}/security-alerts`);
+        const alerts = await r.json();
+        const active = alerts.filter(a => !a.resolved);
+        const resolved = alerts.filter(a => a.resolved);
+        
+        let html = `<div class="poster-header" style="margin-bottom:25px;">
+          <h3 class="text-headline" style="font-size:2rem;">Security Alerts</h3>
+          <div style="display:flex;gap:10px;">
+            <span class="badge" style="background:#FF4D4D; color:#fff;">${active.length} Active</span>
+            <button class="massive-btn" style="background:var(--black); width:auto; padding:8px 20px; font-size:0.9rem;" onclick="openModal('modal-alert')">+ File Alert</button>
+          </div>
+        </div>`;
+        
+        if (active.length) {
+          html += `<div style="font-weight:700; text-transform:uppercase; opacity:0.5; font-size:0.85rem; margin-bottom:12px; letter-spacing:1px;">Active (${active.length})</div>`;
+          active.forEach(a => {
+            html += `<div class="alert-card ${a.severity}">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;">
+                <div>
+                  <p style="font-weight:700; font-size:1rem; margin-bottom:4px;">${a.alert_type}</p>
+                  <p style="opacity:0.6; font-size:0.85rem;">${a.location}</p>
+                </div>
+                <div style="display:flex;gap:8px; flex-shrink:0;">
+                  <span class="badge" style="background:${sevBg(a.severity)}; color:${a.severity==='medium'?'#000':'#fff'};">${a.severity.toUpperCase()}</span>
+                  <button onclick="resolveAlert(${a.alert_id})" class="nav-pill" style="font-size:0.75rem; padding:5px 12px;">Mark Resolved</button>
+                </div>
+              </div>
+              <p style="font-size:0.9rem; line-height:1.5;">${a.details}</p>
+              <p style="font-size:0.8rem; opacity:0.4; margin-top:8px;">${new Date(a.issued_at).toLocaleString()}</p>
+            </div>`;
+          });
+        }
+        
+        if (resolved.length) {
+          html += `<details style="margin-top:20px; opacity:0.6;"><summary style="cursor:pointer; font-weight:700; font-size:0.85rem; text-transform:uppercase; padding:10px 0;">Resolved (${resolved.length})</summary>`;
+          resolved.forEach(a => {
+            html += `<div class="alert-card" style="margin-bottom:8px;">
+              <div style="display:flex; justify-content:space-between;">
+                <div><p style="font-weight:700;">${a.alert_type}</p><p style="opacity:0.5; font-size:0.85rem;">${a.location}</p></div>
+                <span class="badge" style="background:green; color:#fff;">RESOLVED</span>
+              </div>
+              <p style="font-size:0.85rem; margin-top:8px;">${a.details}</p>
+            </div>`;
+          });
+          html += `</details>`;
+        }
+        
+        if (!alerts.length) html += '<p style="opacity:0.5;">No security alerts on record.</p>';
+        document.getElementById('box-alerts').innerHTML = html;
+      } catch(e) { document.getElementById('box-alerts').innerHTML = '<p style="color:red;">Error loading alerts.</p>'; }
+    }
+
+    async function resolveAlert(id) {
+      const r = await fetch(`${API}/security-alerts/${id}/resolve`, { method:'PUT' });
+      if(r.ok) renderAlerts();
+    }
+
+    async function submitAlert() {
+      const body = {
+        alert_type: document.getElementById('al-type').value,
+        location: document.getElementById('al-location').value.trim(),
+        details: document.getElementById('al-details').value.trim(),
+        severity: document.getElementById('al-severity').value
+      };
+      if (!body.location || !body.details) return alert('Please fill in location and details.');
+      const r = await fetch(`${API}/security-alerts`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      if(r.ok){ closeModal('modal-alert'); switchView('alerts'); }
+    }
+
+    // ── 4. CAMPUS BLUEPRINT ──────────────────────────────────────────────────
+    async function renderBlueprint() {
+      document.getElementById('canvas').innerHTML = `<div class="poster-card" style="padding:40px;"><h2 class="text-headline">CAMPUS BLUEPRINT</h2><div id="bp-preview" style="margin-top:20px; text-align:center;"><span style="opacity:0.5;">Loading...</span></div></div>`;
+      const r = await fetch(`${API}/settings/blueprint`);
+      const data = await r.json();
+      if(data.blueprint) document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg);">`;
+      else document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.5;">Campus map not published.</span>`;
     }
   </script>
 
@@ -142,17 +338,10 @@
       <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
       <h2 class="text-headline" style="margin-bottom:30px;">SYSTEM SETTINGS</h2>
       <div class="setting-row">
-        <span class="setting-label">Language / भाषा</span>
-        <select class="form-input" style="width:200px; margin:0;" id="lang-selector">
-           <option value="en">English</option>
-           <option value="hi">Hindi / हिंदी</option>
-        </select>
-      </div>
-      <div class="setting-row">
         <span class="setting-label">External Integrations</span>
         <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
             <input type="email" id="link-g-email" class="form-input" style="margin:0; flex:1;" placeholder="Google Email">
-            <button class="nav-pill" style="border-radius:var(--radius-lg);" onclick="linkGoogleAccount()">Bind Account</button>
+            <button class="nav-pill" onclick="linkGoogleAccount()">Bind Account</button>
         </div>
       </div>
     </div>

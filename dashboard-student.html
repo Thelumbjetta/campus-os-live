@@ -50,6 +50,19 @@
   </div>
 
   <!-- MODALS -->
+  <!-- 0. Notice Detail Modal -->
+  <div class="module-modal" id="modal-notice">
+    <div class="modal-content" style="max-width:640px;">
+      <button class="close-btn" onclick="closeModal('modal-notice')">✕</button>
+      <div id="notice-modal-role" style="margin-bottom:12px;"></div>
+      <h2 class="text-headline" id="notice-modal-title" style="margin-bottom:15px; font-size:1.8rem;"></h2>
+      <p id="notice-modal-body" style="font-size:1rem; line-height:1.7; opacity:0.75; margin-bottom:20px;"></p>
+      <div id="notice-modal-image" style="display:none; margin-bottom:20px;">
+        <img id="notice-modal-img" style="width:100%; border-radius:var(--radius-md); border:1.5px solid rgba(0,0,0,0.08);">
+      </div>
+      <p id="notice-modal-date" style="font-size:0.8rem; opacity:0.4;"></p>
+    </div>
+  </div>
   <!-- 1. Issue Ticket Modal -->
   <div class="module-modal" id="modal-issue">
     <div class="modal-content" style="max-width:800px;">
@@ -191,13 +204,35 @@
 
     async function prefetchBaseData() {
       try {
+        const studentSection = session.profile?.section || 'CS-A';
         const [tt, att, nots] = await Promise.all([
-           fetch(`${API}/timetable?section=CS-A`).then(r=>r.json()),
+           fetch(`${API}/timetable?section=${encodeURIComponent(studentSection)}`).then(r=>r.json()),
            fetch(`${API}/attendance/summary/${studentId}`).then(r=>r.json()),
            fetch(`${API}/notices?role=student`).then(r=>r.json())
         ]);
         cachedTimetable = tt; cachedAttendance = att; cachedNotices = nots;
       } catch(e) { console.error('Prefetch failed'); }
+    }
+
+    function openNotice(n) {
+      document.getElementById('notice-modal-title').textContent = n.title;
+      document.getElementById('notice-modal-body').textContent  = n.content;
+      document.getElementById('notice-modal-date').textContent  = 
+        `Posted: ${new Date(n.date_posted).toLocaleString('en-IN')}` +
+        (n.valid_until ? `  ·  Valid until: ${new Date(n.valid_until).toLocaleDateString('en-IN')}` : '');
+      // Audience badge
+      const rmap = {all:'All Users', student:'Students', faculty:'Faculty', worker:'Workers', guard:'Guards'};
+      document.getElementById('notice-modal-role').innerHTML = 
+        `<span class="badge" style="background:var(--purple); color:#fff;">${rmap[n.target_role]||n.target_role}</span>`;
+      // Image
+      const imgWrap = document.getElementById('notice-modal-image');
+      if (n.image_data) {
+        document.getElementById('notice-modal-img').src = n.image_data;
+        imgWrap.style.display = 'block';
+      } else {
+        imgWrap.style.display = 'none';
+      }
+      openModal('modal-notice');
     }
 
     async function switchView(viewName) {
@@ -226,7 +261,8 @@
       let attHtml = '';
       cachedAttendance.slice(0,4).forEach(c => {
          const pct = c.total ? Math.round(100*c.present/c.total) : 0;
-         attHtml += `<div class="fluid-row"><span class="fluid-row-label">${c.course_code}</span><span class="fluid-row-val" style="color:${pct<75?'var(--neon-green)':'var(--white)'}">${pct}%</span></div>`;
+         const color = pct >= 75 ? 'var(--neon-green)' : '#FF6B6B';
+         attHtml += `<div class="fluid-row"><span class="fluid-row-label">${c.course_code}</span><span class="fluid-row-val" style="color:${color}">${pct}%</span></div>`;
       });
 
       let ttHtml = `<div class="badge" style="background:var(--bg-light); color:var(--black); margin-bottom:15px; display:inline-block;">${todayStr.toUpperCase()}</div>`;
@@ -234,7 +270,27 @@
       else todayClasses.forEach(c => ttHtml += `<div class="fluid-row"><span class="fluid-row-label">${c.start_time} - ${c.end_time}</span><span class="fluid-row-val">${c.course_code}</span></div>`);
 
       let notHtml = '';
-      cachedNotices.slice(0,3).forEach(n => notHtml += `<div class="fluid-row" style="flex-direction:column; align-items:flex-start; gap:5px;"><span class="fluid-row-val">${n.title}</span><span class="fluid-row-label" style="opacity:0.6; font-size:0.8rem;">${new Date(n.date_posted).toLocaleDateString()}</span></div>`);
+      if (!cachedNotices.length) {
+        notHtml = '<p style="opacity:0.5;">No broadcasts yet.</p>';
+      } else {
+        cachedNotices.slice(0,5).forEach(n => {
+          notHtml += `<div class="notice-card" onclick='openNotice(${JSON.stringify(n).replace(/"/g,"&quot;").replace(/'/g,"&apos;")})' style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+              <div style="flex:1;">
+                <p style="font-weight:700; font-size:0.95rem; margin-bottom:4px;">${n.title}</p>
+                <p style="font-size:0.82rem; opacity:0.55; line-height:1.4;">${n.content.slice(0,80)}${n.content.length > 80 ? '...' : ''}</p>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+                ${n.image_data ? '<span style="font-size:1rem;">📎</span>' : ''}
+                <span style="font-size:0.75rem; opacity:0.4;">${new Date(n.date_posted).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>`;
+        });
+        if (cachedNotices.length > 5) {
+          notHtml += `<p style="font-size:0.8rem; opacity:0.5; margin-top:5px; text-align:center;">${cachedNotices.length - 5} more broadcasts</p>`;
+        }
+      }
 
       const html = `
         <div class="hero-panel">
@@ -254,22 +310,32 @@
       window.applyLanguage(localStorage.getItem('os_lang') || 'en');
     }
 
-    /* ── 2. RENDER ANALYTICS (Full Timetable) ───── */
+    /* ── 2. RENDER ANALYTICS (Full Timetable + Detailed Attendance) ─── */
     async function renderAnalytics() {
       const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
       let ttMega = '';
       days.forEach(day => {
          const classes = cachedTimetable.filter(x => x.day_of_week === day).sort((a,b)=>a.period_no-b.period_no);
          ttMega += `<div style="margin-top:20px;"><div class="badge" style="background:rgba(255,255,255,0.2); color:var(--white); margin-bottom:10px; display:inline-block;">${day.toUpperCase()}</div>`;
-         if(!classes.length) ttMega += `<div class="fluid-row"><span class="fluid-row-label">No classes mapped</span></div>`;
-         else classes.forEach(c => ttMega += `<div class="fluid-row"><span class="fluid-row-label">${c.start_time} - ${c.end_time}</span><span class="fluid-row-val">${c.course_code}</span></div>`);
+         if(!classes.length) ttMega += `<div class="fluid-row"><span class="fluid-row-label">No classes</span></div>`;
+         else classes.forEach(c => ttMega += `<div class="fluid-row"><span class="fluid-row-label">${c.start_time} – ${c.end_time}</span><span class="fluid-row-val">${c.course_code} (${c.classroom})</span></div>`);
          ttMega += `</div>`;
       });
       
       let attMega = '';
       cachedAttendance.forEach(c => {
          const pct = c.total ? Math.round(100*c.present/c.total) : 0;
-         attMega += `<div class="fluid-row"><span class="fluid-row-label">${c.course_code}<br><span style="opacity:0.6;font-size:0.8rem;">P:${c.present} A:${c.absent} L:${c.late}</span></span><span class="text-headline" style="color:${pct<75?'var(--neon-green)':'var(--white)'}; font-size:2.5rem;">${pct}%</span></div>`;
+         const statusColor = pct >= 75 ? 'var(--neon-green)' : '#FF6B6B';
+         const warning = pct < 75 ? ' ⚠ Below 75%' : '';
+         attMega += `<div class="fluid-row">
+           <span class="fluid-row-label">${c.course_code}<br>
+             <span style="opacity:0.6;font-size:0.8rem;">Present: ${c.present} &nbsp;Absent: ${c.absent} &nbsp;Late: ${c.late}</span>
+           </span>
+           <div style="text-align:right;">
+             <span class="text-headline" style="color:${statusColor}; font-size:2.5rem;">${pct}%</span>
+             ${warning ? `<div style="font-size:0.75rem; color:#FF6B6B; font-weight:700;">${warning}</div>` : ''}
+           </div>
+         </div>`;
       });
 
       const html = `
@@ -439,6 +505,58 @@
       const r = await fetch(`${API}/issues`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
       if (r.ok) { closeModal('modal-issue'); renderReports(); }
     }
+
+    async function changePassword() {
+      const old_password = document.getElementById('pw-old').value;
+      const new_password = document.getElementById('pw-new').value;
+      const confirm      = document.getElementById('pw-confirm').value;
+      const msg          = document.getElementById('pw-msg');
+      msg.style.display  = 'block';
+      if (!old_password || !new_password) { msg.style.color='#EF476F'; msg.textContent='Fill in all fields.'; return; }
+      if (new_password.length < 6)        { msg.style.color='#EF476F'; msg.textContent='Min 6 characters required.'; return; }
+      if (new_password !== confirm)       { msg.style.color='#EF476F'; msg.textContent='Passwords do not match.'; return; }
+      const r = await fetch('/api/auth/change-password', { method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ user_id: session.user_id, old_password, new_password }) });
+      const d = await r.json();
+      if (r.ok) {
+        msg.style.color = 'green'; msg.textContent = '✓ Password changed successfully.';
+        ['pw-old','pw-new','pw-confirm'].forEach(id => document.getElementById(id).value = '');
+      } else {
+        msg.style.color = '#EF476F'; msg.textContent = d.error || 'Failed to update.';
+      }
+    }
   </script>
+
+  <!-- Settings Modal -->
+  <div class="module-modal" id="modal-settings">
+    <div class="modal-content" style="max-width:520px;">
+      <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">SETTINGS</h2>
+
+      <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:12px;">
+        <span class="setting-label">🔑 Change Password</span>
+        <input type="password" id="pw-old" class="form-input" style="margin:0;" placeholder="Current Password">
+        <input type="password" id="pw-new" class="form-input" style="margin:0;" placeholder="New Password (min 6 characters)">
+        <input type="password" id="pw-confirm" class="form-input" style="margin:0;" placeholder="Confirm New Password">
+        <div id="pw-msg" style="font-size:0.88rem; font-weight:600; display:none;"></div>
+        <button class="nav-pill" style="background:var(--black); color:white; border:none;" onclick="changePassword()">Update Password</button>
+      </div>
+
+      <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px;">
+        <span class="setting-label">🔗 Link Google Account</span>
+        <div style="display:flex; gap:10px; width:100%;">
+            <input type="email" id="link-g-email" class="form-input" style="margin:0; flex:1;" placeholder="Google Email">
+            <button class="nav-pill" style="border-radius:var(--radius-lg); white-space:nowrap;" onclick="linkGoogleAccount()">Bind Account</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <span class="setting-label">Language / भाषा</span>
+        <select class="form-input" style="width:200px; margin:0;" id="lang-selector">
+           <option value="en">English</option><option value="hi">Hindi / हिंदी</option>
+        </select>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
