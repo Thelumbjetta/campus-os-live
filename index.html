@@ -22,6 +22,7 @@
 </head>
 <body>
   <script src="translations.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async></script>
   <!-- Custom Cursor -->
   <div class="cursor-dot" id="cursor-dot"></div>
   <div class="cursor-outline" id="cursor-outline"></div>
@@ -70,10 +71,23 @@
 
         <div style="margin-top:20px; text-align:center;">
            <span style="color:var(--black); opacity:0.6; font-size:0.9rem;">— SECURE LINK —</span><br>
-           <button type="button" class="nav-pill magnetic" style="margin-top:10px; width:100%; justify-content:center; border-color:var(--black); color:var(--black);" onclick="document.getElementById('modal-google').classList.add('open')">
-              <svg style="width:16px;height:16px;margin-right:8px;" viewBox="0 0 24 24"><path fill="currentColor" d="M12.545 10.239v3.821h5.445c-.712 2.315-2.662 3.939-5.445 3.939-3.12 0-5.63-2.5-5.63-5.63s2.51-5.63 5.63-5.63c1.464 0 2.8.563 3.828 1.488l2.793-2.793C17.433 3.659 15.176 2.5 12.545 2.5 7.18 2.5 2.8 6.88 2.8 12.245s4.38 9.745 9.745 9.745c5.365 0 9.745-4.38 9.745-9.745 0-.756-.09-1.467-.27-2.146h-9.475z"/></svg> 
-              Sign in with Google
-           </button>
+           <div style="display:flex; justify-content:center; margin-top:20px;">
+              <div id="g_id_onload"
+                 data-client_id="912402731958-vlhvtbju60v78a04eb8ggh5jk5j9r4t7.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="handleGoogleOfficialLogin"
+                 data-auto_prompt="false">
+              </div>
+              <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="pill"
+                 data-theme="outline"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="left">
+              </div>
+           </div>
         </div>
 
       </div>
@@ -123,20 +137,25 @@
       }
     }
 
-    async function handleGoogleMockLogin() {
-      const google_email = document.getElementById('g-mock-email').value.trim();
-      if(!google_email) return;
-      document.getElementById('g-btn-text').textContent = "Verifying...";
+    async function handleGoogleOfficialLogin(response) {
+      if(!response.credential) return;
+      const btnText = document.getElementById('btn-text');
+      const btnLoad = document.getElementById('btn-loader');
+      btnText.style.display = 'none'; btnLoad.style.display = 'inline';
+
       try {
+        const payload = JSON.parse(atob(response.credential.split('.')[1]));
+        const google_email = payload.email;
+
         const res = await fetch(`${API}/auth/google-login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({google_email}) });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Login failed');
+        if (!res.ok) throw new Error(data.error || 'Account Link not found');
         sessionStorage.setItem('user', JSON.stringify(data));
         const routes = { admin:'dashboard-admin.html', student:'dashboard-student.html', faculty:'dashboard-faculty.html', worker:'dashboard-worker.html', guard:'dashboard-guard.html' };
         window.location.href = routes[data.role] || 'index.html';
       } catch (err) {
-        alert('GOOGLE SYSTEM ERROR: ' + err.message);
-        document.getElementById('g-btn-text').textContent = "Authenticate via Local Simulation";
+        alert('GOOGLE AUTH ERROR: ' + err.message + '\n\nPlease ensure your Google Email matches the one linked in your Dashboard Settings.');
+        btnText.style.display = 'inline'; btnLoad.style.display = 'none';
       }
     }
   </script>
@@ -166,19 +185,6 @@
     </div>
   </div>
 
-  <!-- Mock Google Sign In Modal -->
-  <div class="module-modal" id="modal-google">
-    <button class="close-btn" onclick="document.getElementById('modal-google').classList.remove('open')">✕</button>
-    <div class="container" style="max-width:500px; padding-top:40px; margin:0 auto;">
-      <h2 class="text-headline" style="margin-bottom:40px;">GOOGLE AUTH SIMULATION</h2>
-      <div class="poster-card poster-blue" style="min-height: auto;">
-         <p style="margin-bottom:20px; color:#fff; font-family:var(--font-display);">Enter the mock Google email linked to your account dynamically.</p>
-         <input type="email" id="g-mock-email" class="form-input" style="color:var(--white); border-bottom-color:var(--white); margin-bottom:20px;" placeholder="linked.account@gmail.com" required>
-         <button type="button" class="massive-btn" style="background:var(--white); color:var(--blue);" onclick="handleGoogleMockLogin()">
-            <span id="g-btn-text">Authenticate via Local Simulation &rarr;</span>
-         </button>
-      </div>
-    </div>
-  </div>
+
 </body>
 </html>
