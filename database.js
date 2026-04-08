@@ -15,6 +15,7 @@ function initSchema() {
             email       TEXT UNIQUE NOT NULL,
             password    TEXT NOT NULL,
             role        TEXT NOT NULL CHECK(role IN ('admin','student','faculty','worker','guard')),
+            google_email TEXT UNIQUE,
             created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
         db.run(`CREATE TABLE IF NOT EXISTS students (

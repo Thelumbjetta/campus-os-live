@@ -26,6 +26,35 @@ app.post('/api/auth/login', (req, res) => {
     });
 });
 
+// ══ MOCK GOOGLE AUTH ══════════════════════════════════
+app.post('/api/auth/google-link', (req, res) => {
+    const { user_id, google_email } = req.body;
+    if (!user_id || !google_email) return res.status(400).json({ error: 'Missing parameters' });
+    db.run(`UPDATE users SET google_email = ? WHERE user_id = ?`, [google_email, user_id], function(err) {
+        if (err) {
+            if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'Google email already linked to another account' });
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ success: true, changes: this.changes });
+    });
+});
+
+app.post('/api/auth/google-login', (req, res) => {
+    const { google_email } = req.body;
+    if (!google_email) return res.status(400).json({ error: 'Google email required' });
+    
+    db.get(`SELECT * FROM users WHERE google_email = ?`, [google_email], (err, user) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!user) return res.status(401).json({ error: 'Account Not Linked. Please login normally and link this Google account in Settings.' });
+        
+        const roleMap = { student:`SELECT * FROM students WHERE user_id=?`, faculty:`SELECT * FROM faculty WHERE user_id=?`, worker:`SELECT * FROM workers WHERE user_id=?`, guard:`SELECT * FROM guards WHERE user_id=?` };
+        const profileSql = roleMap[user.role];
+        const respond = (profile) => res.json({ user_id:user.user_id, name:user.name, email:user.email, role:user.role, profile:profile||null, google_email:user.google_email });
+        if (profileSql) db.get(profileSql,[user.user_id],(e2,p)=>{ if(e2) return res.status(500).json({error:e2.message}); respond(p); });
+        else respond(null);
+    });
+});
+
 // ══ USERS (Admin) ═════════════════════════════════════
 app.get('/api/users', (req, res) => {
     db.all(`SELECT user_id,name,email,role,created_at FROM users ORDER BY role,name`,[],(err,rows)=>{

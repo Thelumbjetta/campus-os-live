@@ -79,6 +79,14 @@
     const attachHover = () => { document.querySelectorAll('a, button, input, select, .poster-card, .fluid-row').forEach(el => { el.addEventListener('mouseenter', () => { dot.classList.add('focus'); outline.classList.add('focus'); }); el.addEventListener('mouseleave', () => { dot.classList.remove('focus'); outline.classList.remove('focus'); }); }); };
     
     function openModal(i) { document.getElementById(i).classList.add('open'); } function closeModal(i) { document.getElementById(i).classList.remove('open'); } function logout() { sessionStorage.clear(); window.location.href='index.html'; }
+    async function linkGoogleAccount() {
+       const google_email = document.getElementById('link-g-email').value.trim();
+       if(!google_email) return;
+       const r = await fetch(`${API}/auth/google-link`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id: session.user_id, google_email}) });
+       const d = await r.json();
+       if(r.ok) { alert('Successfully linked to Google Account: ' + google_email); }
+       else { alert('ERROR: ' + d.error); }
+    }
 
     window.onload = async () => {
       session = JSON.parse(sessionStorage.getItem('user') || 'null');
@@ -238,9 +246,16 @@
                <option style="color:#000;" value="gu">Gujarati / ગુજરાતી</option>
             </select>
          </div>
-         <div class="setting-row" style="border-bottom:none;">
+         <div class="setting-row">
             <span class="setting-label">Accessibility</span>
             <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="document.body.classList.toggle('color-blind');">Toggle High Contrast</button>
+         </div>
+         <div class="setting-row" style="border-bottom:none; display:flex; flex-direction:column; align-items:flex-start; gap:10px;">
+            <span class="setting-label">External Integrations</span>
+            <div style="display:flex; gap:10px; width:100%;">
+                <input type="email" id="link-g-email" class="form-input" style="color:var(--white); border-bottom-color:var(--white); margin:0; flex:1;" placeholder="Link Google Email">
+                <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="linkGoogleAccount()">Bind Account</button>
+            </div>
          </div>
       </div>
     </div>
