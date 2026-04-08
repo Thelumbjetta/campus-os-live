@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DASHBOARD | CAMPUS OS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="index-page">
+  <!-- Background Blobs carrying over the liquid aesthetic -->
+  <div class="blob blob-1" style="opacity: 0.3;"></div>
+  
+  <div class="top-bar-glass">
+    <div class="marquee-content">
+      SYSTEM NOMINAL • GEOFENCE RULES UPDATED • NEW QUERIES IN QUEUE • SYNCING DATABASE...
+    </div>
+  </div>
+
+  <div class="dashboard-container">
+    <aside class="sidebar-glass">
+      <div class="liquid-card h-100 d-flex flex-column" style="padding: 20px;">
+        <div class="sidebar-header">
+          <h3 class="mb-1" style="font-weight: 800; color: var(--color-accent-dark);">SYS_ADMIN</h3>
+          <span style="font-size: 0.85rem; opacity: 0.7; font-weight: 600;">ID: 994-ALPHA</span>
+        </div>
+        <ul class="sidebar-nav flex-grow-1">
+          <li><a href="#" class="sidebar-nav-link active">Geofence Punch-In</a></li>
+          <li><a href="#" class="sidebar-nav-link">Notice Board</a></li>
+          <li><a href="#" class="sidebar-nav-link">Academic Q&A</a></li>
+          <li><a href="#" class="sidebar-nav-link">Attendance Log</a></li>
+          <li class="mt-auto"><a href="index.html" class="sidebar-nav-link text-center" style="background: rgba(255,0,0,0.05); color: #d32f2f;">Sign Out Session</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 style="font-weight: 800; font-size: 2.2rem; color: var(--color-text);">Command Center</h2>
+        <div class="btn-liquid pt-2 pb-2" style="font-size: 0.9rem; cursor: default;">
+          <span class="status-indicator" style="width:10px;height:10px;margin-right:8px;"></span> Live Sync
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Card 1: Geofence Punch -->
+        <div class="col-12 col-xl-4">
+          <div class="liquid-card h-100 d-flex flex-column text-center">
+            <div class="liquid-card-header">
+              Location Module
+            </div>
+            <div class="flex-grow-1 d-flex flex-column justify-content-center align-items-center py-2">
+              <p style="font-weight: 600; opacity: 0.8; margin-bottom: 25px;">Module currently on standby. Awaiting manual trigger to log coordinates.</p>
+              <button class="btn-liquid w-100" id="init-btn">LOG COORDINATES</button>
+              <div class="w-100 mt-4" id="geo-status" style="display: none; background: rgba(0, 210, 255, 0.1); border-radius: 20px; padding: 15px; border: 1px solid rgba(0, 210, 255, 0.3);">
+                <!-- Geofence results will appear here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Query Tickets -->
+        <div class="col-12 col-xl-8">
+          <div class="liquid-card h-100">
+            <div class="liquid-card-header">
+              Academic Queries
+              <span style="font-size: 0.9rem; font-weight: 600; opacity: 0.6;">Recently Opened</span>
+            </div>
+            <div class="liquid-list" id="queries-list">
+              <!-- Queries injected by JS -->
+              <p style="text-align: center; opacity: 0.6; padding: 20px;">Loading data from SQLite...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Notices -->
+        <div class="col-12">
+          <div class="liquid-card mb-0">
+            <div class="liquid-card-header d-flex justify-content-between">
+              Campus Notice Board
+              <button class="btn-mini px-3 m-0">+ Post</button>
+            </div>
+            <div class="row g-4" id="notices-list">
+              <!-- Notices injected by JS -->
+              <p style="text-align: center; opacity: 0.6; padding: 20px;">Fetching global notices...</p>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

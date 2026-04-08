@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Terminal — OS</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .hero-panel { border-radius: var(--radius-lg); background: var(--bg-primary); padding: 40px; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; border: 3px solid var(--accent); position: relative; overflow: hidden; }
+    .hero-panel::after { content: 'S-F'; position: absolute; right: -50px; bottom: -50px; font-size: 15rem; font-family: var(--font-display); font-weight: 900; opacity: 0.05; pointer-events: none; z-index: 1;}
+    .hero-panel h1 { position: relative; z-index: 2; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="cursor-dot" id="cursor-dot"></div><div class="cursor-outline" id="cursor-outline"></div>
+
+  <nav class="navbar-fluid stagger-up d-1" style="border-bottom: 3px solid var(--accent);">
+    <a href="landing.html" class="brand-logotype"><div style="width:36px;height:36px;background:var(--accent);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">S</div> SEC FORCE OS</a>
+    <div style="display:flex; gap:10px;"><span class="nav-pill" style="border:none;" id="lbl-name">Guard</span><button class="nav-pill nav-icon-btn magnetic" onclick="document.getElementById('modal-settings').classList.add('open')">⚙</button><button class="nav-pill magnetic" onclick="logout()" style="background:var(--black); color:var(--white);">⏻ Logout</button></div>
+  </nav>
+
+  <div class="marquee-wrapper stagger-up d-2" style="background:var(--accent);"><div class="marquee-content"><span>● SECURITY FEED ACTIVE</span><span>● SECURITY FEED ACTIVE</span><span>● SECURITY FEED ACTIVE</span></div></div>
+
+  <div class="dashboard-canvas stagger-up d-3">
+     <div class="hero-panel"><div><p style="font-family:var(--font-display); font-weight:700; text-transform:uppercase;">Surveillance Tracker</p><h1 class="text-mega" style="font-size:clamp(3rem, 8vw, 8rem);">SECURITY QUEUE</h1></div></div>
+     <div class="grid-masonry" style="padding:0;">
+        <div class="blob-card b-1" id="box-tasks" style="grid-column: 1/-1;">Loading tasks...</div>
+     </div>
+  </div>
+
+  <div class="module-modal" id="modal-task">
+    <button class="close-btn" onclick="closeModal('modal-task')">✕</button>
+    <div class="container" style="max-width:800px; padding-top:40px;">
+      <h2 class="text-headline" style="margin-bottom:40px;">UPDATE STATUS</h2>
+      <div class="blob-card b-2">
+         <input type="hidden" id="tk-id">
+         <h3 class="text-headline" id="tk-title" style="margin-bottom:20px;"></h3>
+         <select id="tk-status" class="form-input" style="color:var(--black); background:var(--white);"><option value="assigned">Assigned</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option></select>
+         <button class="massive-btn" style="background:var(--accent); border-color:var(--accent); color:var(--white);" onclick="submitUpdate()">Save State</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api';
+    let session = null;
+    const dot = document.getElementById('cursor-dot'); const outline = document.getElementById('cursor-outline');
+    window.addEventListener('mousemove', (e) => { dot.style.left = `${e.clientX}px`; dot.style.top = `${e.clientY}px`; outline.animate({ left: `${e.clientX}px`, top: `${e.clientY}px` }, { duration: 500, fill: "forwards" }); });
+    const attachHover = () => { document.querySelectorAll('a, button, input, select, .blob-card, .fluid-row').forEach(el => { el.addEventListener('mouseenter', () => { dot.classList.add('focus'); outline.classList.add('focus'); }); el.addEventListener('mouseleave', () => { dot.classList.remove('focus'); outline.classList.remove('focus'); }); }); };
+    
+    function openModal(id) { document.getElementById(id).classList.add('open'); } function closeModal(id) { document.getElementById(id).classList.remove('open'); } function logout() { sessionStorage.clear(); window.location.href='index.html'; }
+
+    window.onload = async () => {
+      session = JSON.parse(sessionStorage.getItem('user') || 'null');
+      if (!session || session.role !== 'guard') { window.location.href = 'index.html'; return; }
+      document.getElementById('lbl-name').textContent = session.name;
+      await fetchTasks();
+    };
+
+    async function fetchTasks() {
+       try {
+         const r = await fetch(`${API}/issues?worker_id=${session.user_id}`); const issues = await r.json();
+         let html = `<div class="text-mega">ALERT</div><div class="poster-header"><h3 class="text-headline text-headline">Active Queue</h3></div><div class="poster-content" style="margin-top:40px;">`;
+         if(!issues.length) html += '<p>No pending security assignments.</p>';
+         issues.forEach(i => {
+           html += `<div class="fluid-row" style="cursor:pointer; border-bottom-color:rgba(255,255,255,0.2);" onclick='editTask(${JSON.stringify(i)})'>
+             <div style="display:flex; flex-direction:column; gap:5px;"><span class="fluid-row-val">${i.title} (${i.location})</span><span class="fluid-row-label" style="opacity:0.6;">${i.category} · ${i.severity.toUpperCase()}</span></div>
+             <span class="blob-pill" style="border-color:rgba(255,255,255,0.3); color:${i.status==='resolved'?'green':'var(--white)'}; align-self:center;">${i.status.toUpperCase()}</span>
+           </div>`;
+         });
+         document.getElementById('box-tasks').innerHTML = html + `</div>`; attachHover();
+       } catch(e) {}
+    }
+
+    function editTask(i) {
+       document.getElementById('tk-id').value = i.issue_id; document.getElementById('tk-title').textContent = i.title; document.getElementById('tk-status').value = i.status; openModal('modal-task');
+    }
+    
+    async function submitUpdate() {
+       const u = { status: document.getElementById('tk-status').value };
+       const id = document.getElementById('tk-id').value;
+       const r = await fetch(`${API}/issues/${id}/status`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(u) });
+       if(r.ok){ closeModal('modal-task'); alert('Synchronized.'); fetchTasks(); }
+    }
+  </script>
+  </script>
+
+  <!-- Settings Modal -->
+  <div class="module-modal" id="modal-settings">
+    <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
+    <div class="container" style="max-width:600px; padding-top:40px; margin:0 auto;">
+      <h2 class="text-headline" style="margin-bottom:40px;">SYSTEM SETTINGS</h2>
+      <div class="poster-card poster-dark" style="min-height: auto;">
+         <div class="setting-row">
+            <span class="setting-label">Language / भाषा</span>
+            <select class="form-input lang-selector" style="width:200px; margin:0; border-bottom-color:var(--white); color:var(--white); background:transparent;">
+               <option style="color:#000;" value="en">English</option>
+               <option style="color:#000;" value="hi">Hindi / हिंदी</option>
+               <option style="color:#000;" value="ml">Malayalam / മലയാളം</option>
+               <option style="color:#000;" value="te">Telugu / తెలుగు</option>
+               <option style="color:#000;" value="bn">Bengali / বাংলা</option>
+               <option style="color:#000;" value="gu">Gujarati / ગુજરાતી</option>
+            </select>
+         </div>
+         <div class="setting-row" style="border-bottom:none;">
+            <span class="setting-label">Accessibility</span>
+            <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="document.body.classList.toggle('color-blind');">Toggle High Contrast</button>
+         </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

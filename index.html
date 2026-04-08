@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System OS — Login</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .login-grid { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; }
+    .login-left { background: var(--blue); padding: 40px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative; }
+    .login-right { background: var(--bg-primary); padding: 40px; display: flex; align-items: center; justify-content: center; }
+    
+    .cred-selector { display: flex; gap: 10px; margin-bottom: 40px; }
+    .cred-btn {
+      padding: 10px 20px; border-radius: var(--radius-pill); border: var(--border-line);
+      background: transparent; font-family: var(--font-base); font-weight: 600; cursor: pointer; transition: all 0.3s;
+    }
+    .cred-btn.active { background: var(--black); color: var(--white); }
+    
+    @media(max-width: 900px) { .login-grid { grid-template-columns: 1fr; } .login-left { min-height: 40vh; } }
+  </style>
+</head>
+<body>
+  <script src="translations.js"></script>
+  <!-- Custom Cursor -->
+  <div class="cursor-dot" id="cursor-dot"></div>
+  <div class="cursor-outline" id="cursor-outline"></div>
+
+  <div class="login-grid">
+    <!-- Left Visual Poster Block -->
+    <div class="login-left poster-blue stagger-up d-1">
+      <div class="poster-huge-bg" style="opacity: 0.15; font-size: 25vw; right:-10vw; bottom:0;">SEC</div>
+      <a href="landing.html" class="brand-logotype" style="color:var(--white);">
+        <div style="width:40px;height:40px;background:var(--white);border-radius:50%;color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">S</div>
+        <span data-i18n="app_sys">SYS OS</span>
+      </a>
+      
+      <div style="z-index:2; position:relative; margin-top:100px;">
+        <h1 class="text-mega" style="color:var(--white); font-size:clamp(3rem, 8vw, 8rem);">AUTH<br>ENTIC<br>ATION</h1>
+        <p style="margin-top:20px; color:#c7cdff; font-size:1.2rem; max-width:400px; line-height:1.5;" data-i18n="auth_desc">Access the beautifully fluid, entirely rebuilt Campus Central Hub.</p>
+      </div>
+    </div>
+
+    <!-- Right Interaction Block -->
+    <div class="login-right stagger-up d-2" style="position: relative;">
+      <div style="position: absolute; top: 30px; right: 40px; z-index: 10;">
+        <button class="nav-pill nav-icon-btn magnetic" onclick="document.getElementById('modal-settings').classList.add('open')">⚙</button>
+      </div>
+      <div class="poster-card" style="width: 100%; max-width: 500px; min-height:auto;">
+        
+        <h2 class="text-headline" style="margin-bottom: 40px;" data-i18n="login">LOGIN</h2>
+        
+        <div class="cred-selector" style="flex-wrap: wrap;">
+          <button class="cred-btn active" onclick="fillCred('student@campus.edu','Student@123',this)" data-i18n="student">Student</button>
+          <button class="cred-btn" onclick="fillCred('faculty@campus.edu','Faculty@123',this)" data-i18n="faculty">Faculty</button>
+          <button class="cred-btn" onclick="fillCred('admin@campus.edu','Admin@123',this)" data-i18n="admin">Admin</button>
+          <button class="cred-btn" onclick="fillCred('worker@campus.edu','Worker@123',this)" data-i18n="worker">Worker</button>
+          <button class="cred-btn" onclick="fillCred('guard@campus.edu','Guard@123',this)" data-i18n="guard">Guard</button>
+        </div>
+
+        <form onsubmit="handleLogin(event)">
+          <input type="email" id="email-input" class="form-input" placeholder="student@campus.edu" value="student@campus.edu" required>
+          <input type="password" id="password-input" class="form-input" placeholder="••••••••" value="Student@123" required>
+          
+          <button type="submit" class="massive-btn" id="login-btn">
+            <span id="btn-text" data-i18n="auth">Authenticate &rarr;</span>
+            <span id="btn-loader" style="display:none;" data-i18n="auth_verifying">Verifying System...</span>
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api';
+
+    /* Cursor Logic */
+    const dot = document.getElementById('cursor-dot');
+    const outline = document.getElementById('cursor-outline');
+    window.addEventListener('mousemove', (e) => {
+      dot.style.left = `${e.clientX}px`; dot.style.top = `${e.clientY}px`;
+      outline.animate({ left: `${e.clientX}px`, top: `${e.clientY}px` }, { duration: 500, fill: "forwards", easing: "ease" });
+    });
+    document.querySelectorAll('a, button, input, select, .poster-card').forEach(el => {
+      el.addEventListener('mouseenter', () => { dot.classList.add('focus'); outline.classList.add('focus'); });
+      el.addEventListener('mouseleave', () => { dot.classList.remove('focus'); outline.classList.remove('focus'); });
+    });
+
+    function fillCred(email, pwd, btn) {
+      document.getElementById('email-input').value = email;
+      document.getElementById('password-input').value = pwd;
+      document.querySelectorAll('.cred-btn').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('email-input').value.trim();
+      const password = document.getElementById('password-input').value;
+      const btnText = document.getElementById('btn-text');
+      const btnLoad = document.getElementById('btn-loader');
+      btnText.style.display = 'none'; btnLoad.style.display = 'inline';
+
+      try {
+        const res = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+        sessionStorage.setItem('user', JSON.stringify(data));
+        const routes = { admin:'dashboard-admin.html', student:'dashboard-student.html', faculty:'dashboard-faculty.html', worker:'dashboard-worker.html', guard:'dashboard-guard.html' };
+        window.location.href = routes[data.role] || 'index.html';
+      } catch (err) {
+        alert('ERROR: ' + err.message);
+        btnText.style.display = 'inline'; btnLoad.style.display = 'none';
+      }
+    }
+  </script>
+
+  <!-- Settings Modal -->
+  <div class="module-modal" id="modal-settings">
+    <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
+    <div class="container" style="max-width:600px; padding-top:40px; margin:0 auto;">
+      <h2 class="text-headline" style="margin-bottom:40px;">SYSTEM SETTINGS</h2>
+      <div class="poster-card poster-dark" style="min-height: auto;">
+         <div class="setting-row">
+            <span class="setting-label">Language / भाषा</span>
+            <select class="form-input lang-selector" style="width:200px; margin:0; border-bottom-color:var(--white); color:var(--white); background:transparent;">
+               <option style="color:#000;" value="en">English</option>
+               <option style="color:#000;" value="hi">Hindi / हिंदी</option>
+               <option style="color:#000;" value="ml">Malayalam / മലയാളം</option>
+               <option style="color:#000;" value="te">Telugu / తెలుగు</option>
+               <option style="color:#000;" value="bn">Bengali / বাংলা</option>
+               <option style="color:#000;" value="gu">Gujarati / ગુજરાતી</option>
+            </select>
+         </div>
+         <div class="setting-row" style="border-bottom:none;">
+            <span class="setting-label">Accessibility</span>
+            <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="document.body.classList.toggle('color-blind');">Toggle High Contrast</button>
+         </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
