@@ -143,6 +143,12 @@ function initSchema() {
             content     TEXT NOT NULL,
             created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
+
+        /* ── NEW: System Settings Table ── */
+        db.run(`CREATE TABLE IF NOT EXISTS system_settings (
+            setting_key   TEXT PRIMARY KEY,
+            setting_value TEXT
+        )`);
         db.run(`CREATE TABLE IF NOT EXISTS query_replies (
             reply_id    INTEGER PRIMARY KEY AUTOINCREMENT,
             pq_id       INTEGER REFERENCES public_queries(pq_id) ON DELETE CASCADE,
@@ -291,6 +297,11 @@ function initSchema() {
             qrStmt.run(1, 2, "I need a frontend dev! Let's team up.");
             qrStmt.run(2, 3, "Yes, usually starts being 24/7 a week before exams.");
             qrStmt.finalize();
+
+            /* Seed default settings */
+            const setStmt = db.prepare(`INSERT OR IGNORE INTO system_settings (setting_key, setting_value) VALUES (?, ?)`);
+            setStmt.run('blueprint', '');
+            setStmt.finalize();
         });
     });
 }

@@ -3,93 +3,242 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>System OS — Login</title>
+  <title>Campus OS — Next Gen Management</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .login-grid { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; }
-    .login-left { background: var(--blue); padding: 40px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative; }
-    .login-right { background: var(--bg-primary); padding: 40px; display: flex; align-items: center; justify-content: center; }
-    
-    .cred-selector { display: flex; gap: 10px; margin-bottom: 40px; }
-    .cred-btn {
-      padding: 10px 20px; border-radius: var(--radius-pill); border: var(--border-line);
-      background: transparent; font-family: var(--font-base); font-weight: 600; cursor: pointer; transition: all 0.3s;
+    /* Specific index layout overrides to match Binke agency image */
+    .hero-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; margin-top: 60px;
     }
-    .cred-btn.active { background: var(--black); color: var(--white); }
+    @media(max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } }
     
-    @media(max-width: 900px) { .login-grid { grid-template-columns: 1fr; } .login-left { min-height: 40vh; } }
+    .hero-content { padding-right: 20px; }
+    .hero-graphic {
+      background: var(--neon-green); border-radius: 40px;
+      position: relative; height: 500px; border: var(--border-thick);
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      box-shadow: inset -20px -20px 0 rgba(0,0,0,0.05);
+    }
+    
+    .client-logos {
+      display: flex; gap: 40px; margin-top: 80px; padding: 20px 40px;
+      background: var(--white); border-radius: var(--radius-pill); border: 1px solid rgba(0,0,0,0.1);
+      align-items: center; justify-content: center; flex-wrap: wrap; text-align: center;
+      max-width: 800px; margin-inline: auto; font-weight: 600; opacity: 0.8;
+    }
+    
+    .dark-section-inner {
+      text-align: center; max-width: 900px; margin: 0 auto;
+    }
+    
+    .neon-banner {
+      background: var(--neon-green); color: var(--black); font-weight: 700;
+      padding: 10px 30px; border-radius: var(--radius-pill); display: inline-block;
+      margin: 30px 0 50px 0; border: var(--border-thick);
+    }
+    
+    .dashboard-mockup {
+      background: var(--white); border-radius: 20px; padding: 15px;
+      border: var(--border-thick); margin-top: 40px; box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    
+    /* Login Modal Specific */
+    .cred-selector { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center;}
+    .cred-btn {
+      padding: 8px 16px; border-radius: var(--radius-pill); border: 1px solid rgba(0,0,0,0.2);
+      background: var(--gray-button); font-weight: 600; cursor: pointer; transition: all 0.3s;
+    }
+    .cred-btn.active { background: var(--purple); color: var(--white); border-color: var(--purple); }
   </style>
 </head>
 <body>
   <script src="translations.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script>
-  <!-- Custom Cursor -->
-  <div class="cursor-dot" id="cursor-dot"></div>
-  <div class="cursor-outline" id="cursor-outline"></div>
 
-  <div class="login-grid">
-    <!-- Left Visual Poster Block -->
-    <div class="login-left poster-blue stagger-up d-1">
-      <div class="poster-huge-bg" style="opacity: 0.15; font-size: 25vw; right:-10vw; bottom:0;">SEC</div>
-      <a href="landing.html" class="brand-logotype" style="color:var(--white);">
-        <div style="width:40px;height:40px;background:var(--white);border-radius:50%;color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">S</div>
-        <span data-i18n="app_sys">SYS OS</span>
-      </a>
+  <!-- Navbar -->
+  <nav class="navbar-fluid">
+    <a href="index.html" class="brand-logotype">
+      <div style="width:36px;height:36px;background:var(--black);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">C</div>
+      Campus<span>OS</span>
+    </a>
+    
+    <div class="nav-links">
+      <a href="#" class="active" data-i18n="home">Home</a>
+      <a href="#" data-i18n="services">Services</a>
+      <a href="#" data-i18n="portfolio">Portfolio</a>
+      <a href="#" data-i18n="pricing">Pricing</a>
+    </div>
+    
+    <div style="display:flex; gap:15px; align-items:center;">
+       <button class="nav-icon-btn" onclick="document.getElementById('modal-settings').classList.add('open')">🌐</button>
+       <button class="nav-pill" onclick="openLoginModal()" data-i18n="lets_talk">Let's Talk</button>
+    </div>
+  </nav>
+
+  <!-- 1. Hero Section -->
+  <section class="section-light stagger-up d-1">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <h1 class="text-mega">Total <span style="color:var(--bg-dark);">Campus</span><br>Control <span style="font-family: serif; font-style: italic; font-weight:normal;">~&rarr;</span></h1>
+          <p style="margin: 30px 0; font-size: 1.1rem; line-height: 1.6; max-width: 450px; opacity: 0.8;" data-i18n="auth_desc">
+            No more disconnected academic systems. Experience campus management as it should be, with real-time issue tracking, unified schedules, and interactive blueprints.
+          </p>
+          <div style="display:flex; gap:20px; align-items:center;">
+             <button class="massive-btn" style="width:auto; padding:15px 40px;" onclick="openLoginModal()" data-i18n="get_started">Get Started</button>
+             <div style="width:50px;height:50px;background:var(--neon-green);border-radius:50%;border:var(--border-thick);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">⏩</div>
+          </div>
+        </div>
+        
+        <div class="hero-graphic">
+           <!-- CSS approximation of the abstract floating vector shapes -->
+           <div class="graphic-element" style="width: 200px; height: 120px; top: 10%; right: 10%; background: var(--bg-dark); display:flex; gap:10px; align-items:center; justify-content:center;">
+              <div style="width:40px;height:20px;background:white;border-radius:20px;"></div>
+              <div style="width:40px;height:20px;background:white;border-radius:20px;"></div>
+           </div>
+           
+           <div class="graphic-element" style="width: 250px; height: 150px; bottom: 15%; left: -10%; padding:20px;">
+              <div style="width:100px;height:10px;background:rgba(0,0,0,0.1);border-radius:5px;margin-bottom:10px;"></div>
+              <div style="width:150px;height:10px;background:rgba(0,0,0,0.1);border-radius:5px;margin-bottom:10px;"></div>
+              <div style="width:120px;height:80px;background:var(--purple);border-radius:10px;margin-left:auto;"></div>
+           </div>
+           
+           <div style="position:absolute; font-size:4rem; right:15%; bottom:20%;">🎵</div>
+           <div style="position:absolute; top:-10%; right:5%; font-size:5rem;">✦</div>
+           <div style="position:absolute; top:30%; left:20%; font-size:4rem; transform:rotate(-45deg);">👆</div>
+        </div>
+      </div>
       
-      <div style="z-index:2; position:relative; margin-top:100px;">
-        <h1 class="text-mega" style="color:var(--white); font-size:clamp(3rem, 8vw, 8rem);">AUTH<br>ENTIC<br>ATION</h1>
-        <p style="margin-top:20px; color:#c7cdff; font-size:1.2rem; max-width:400px; line-height:1.5;" data-i18n="auth_desc">Access the beautifully fluid, entirely rebuilt Campus Central Hub.</p>
+      <div class="client-logos">
+        <span style="opacity:0.6; font-size:0.9rem;">Supporting Core<br>Departments</span>
+        <span style="font-family:serif;font-size:1.5rem;font-style:italic;">Engineering</span>
+        <span style="font-weight:900;font-size:1.5rem;background:var(--black);color:white;padding:2px 10px;border-radius:5px;">Sciences</span>
+        <span style="font-family:'Outfit';font-weight:800;font-size:1.5rem;border:2px solid;border-radius:50%;padding:5px;">Arts</span>
+        <span>🔥</span>
       </div>
     </div>
+  </section>
 
-    <!-- Right Interaction Block -->
-    <div class="login-right stagger-up d-2" style="position: relative;">
-      <div style="position: absolute; top: 30px; right: 40px; z-index: 10;">
-        <button class="nav-pill nav-icon-btn magnetic" onclick="document.getElementById('modal-settings').classList.add('open')">⚙</button>
+  <!-- 2. Middle Section (Dark) -->
+  <section class="section-dark stagger-up d-2">
+    <div class="container dark-section-inner">
+      <h2 class="text-headline">Real-time Issue &<br><b>Live Dispatching</b></h2>
+      <div class="neon-banner">Complete Oversight For Administrators & Security Workers.</div>
+      
+      <!-- Dashboard Mockup graphic -->
+      <div class="dashboard-mockup">
+         <!-- Simulated UI Topbar -->
+         <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid rgba(0,0,0,0.1); padding-bottom:10px;">
+            <div style="display:flex;gap:10px;">
+               <div style="width:12px;height:12px;background:#FF5F56;border-radius:50%;"></div>
+               <div style="width:12px;height:12px;background:#FFBD2E;border-radius:50%;"></div>
+               <div style="width:12px;height:12px;background:#27C93F;border-radius:50%;"></div>
+            </div>
+            <div style="width:200px;height:20px;background:rgba(0,0,0,0.05);border-radius:10px;"></div>
+         </div>
+         
+         <!-- Simulated UI Body -->
+         <div style="display:grid; grid-template-columns: 1fr 2fr; gap:15px; height: 350px;">
+            <div style="display:flex;flex-direction:column;gap:15px;">
+               <div style="flex:1;background:var(--neon-green);border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:3rem; color:var(--black);">🏞️</div>
+               <div style="flex:1;background:var(--purple);border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-family:var(--font-display); font-size:2rem; font-weight:700;">Aa</div>
+               <div style="flex:1;background:var(--bg-light);border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:2rem;">▶️</div>
+            </div>
+            <div style="background:var(--purple);border-radius:10px; padding:30px; text-align:left; color:white; position:relative; overflow:hidden;">
+               <h3 style="font-family:var(--font-display); font-size:2rem;">Visual <span style="font-weight:700;">Blueprints</span><br>Combined With<br>Interactive<br>Security</h3>
+               <div style="position:absolute; right:-50px; bottom:-50px; width:200px; height:400px; background:rgba(255,255,255,0.2); border-radius:100px; transform:rotate(45deg);"></div>
+               <div style="position:absolute; right:20px; bottom:20px; font-size:5rem;">👩🏽‍🦱</div>
+            </div>
+         </div>
+         <div style="display:flex; gap:10px; margin-top:15px;">
+            <div style="height:60px;flex:1;background:#ddd;border-radius:5px;"></div>
+            <div style="height:60px;flex:1;background:#ccc;border-radius:5px;"></div>
+            <div style="height:60px;flex:1;background:#eee;border-radius:5px;"></div>
+            <div style="height:60px;flex:1;background:#bbb;border-radius:5px;"></div>
+         </div>
       </div>
-      <div class="poster-card" style="width: 100%; max-width: 500px; min-height:auto;">
+    </div>
+  </section>
+
+  <!-- 3. Bottom Section (Light) -->
+  <section class="section-light stagger-up d-3" style="text-align:center;">
+    <div class="container">
+      <h2 class="text-headline" style="margin-bottom:30px; font-weight:500;">Unifying the Entire<br>Academic Ecosystem</h2>
+      <button class="nav-pill" style="background:var(--purple); color:white; font-family:var(--font-display); font-size:1.1rem; border:none; padding:15px 30px;">Login Below To Enter</button>
+    </div>
+  </section>
+
+  <!-- Login Modal (Replacing the right block from old index) -->
+  <div class="module-modal" id="modal-login">
+    <div class="modal-content">
+      <button class="close-btn" onclick="document.getElementById('modal-login').classList.remove('open')">✕</button>
+      
+      <div style="text-align:center; margin-bottom:25px;">
+         <div style="width:50px;height:50px;background:var(--black);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.5rem; margin:0 auto 15px auto;">C</div>
+         <h2 class="text-headline" style="font-size:2rem;" data-i18n="login">Welcome Back</h2>
+         <p style="opacity:0.6; margin-top:5px;">Sign in to your Campus OS account.</p>
+      </div>
+
+      <div class="cred-selector">
+        <button class="cred-btn active" onclick="fillCred('student@campus.edu','Student@123',this)" data-i18n="student">Student</button>
+        <button class="cred-btn" onclick="fillCred('faculty@campus.edu','Faculty@123',this)" data-i18n="faculty">Faculty</button>
+        <button class="cred-btn" onclick="fillCred('admin@campus.edu','Admin@123',this)" data-i18n="admin">Admin</button>
+        <button class="cred-btn" onclick="fillCred('worker@campus.edu','Worker@123',this)" data-i18n="worker">Worker</button>
+        <button class="cred-btn" onclick="fillCred('guard@campus.edu','Guard@123',this)" data-i18n="guard">Guard</button>
+      </div>
+
+      <form onsubmit="handleLogin(event)">
+        <input type="email" id="email-input" class="form-input" placeholder="Email Address" value="student@campus.edu" required>
+        <input type="password" id="password-input" class="form-input" placeholder="Password" value="Student@123" required>
         
-        <h2 class="text-headline" style="margin-bottom: 40px;" data-i18n="login">LOGIN</h2>
-        
-        <div class="cred-selector" style="flex-wrap: wrap;">
-          <button class="cred-btn active" onclick="fillCred('student@campus.edu','Student@123',this)" data-i18n="student">Student</button>
-          <button class="cred-btn" onclick="fillCred('faculty@campus.edu','Faculty@123',this)" data-i18n="faculty">Faculty</button>
-          <button class="cred-btn" onclick="fillCred('admin@campus.edu','Admin@123',this)" data-i18n="admin">Admin</button>
-          <button class="cred-btn" onclick="fillCred('worker@campus.edu','Worker@123',this)" data-i18n="worker">Worker</button>
-          <button class="cred-btn" onclick="fillCred('guard@campus.edu','Guard@123',this)" data-i18n="guard">Guard</button>
-        </div>
+        <button type="submit" class="massive-btn" id="login-btn">
+          <span id="btn-text" data-i18n="auth">Log In &rarr;</span>
+          <span id="btn-loader" style="display:none;" data-i18n="auth_verifying">Verifying...</span>
+        </button>
+      </form>
 
-        <form onsubmit="handleLogin(event)">
-          <input type="email" id="email-input" class="form-input" placeholder="student@campus.edu" value="student@campus.edu" required>
-          <input type="password" id="password-input" class="form-input" placeholder="••••••••" value="Student@123" required>
-          
-          <button type="submit" class="massive-btn" id="login-btn">
-            <span id="btn-text" data-i18n="auth">Authenticate &rarr;</span>
-            <span id="btn-loader" style="display:none;" data-i18n="auth_verifying">Verifying System...</span>
-          </button>
-        </form>
+      <div style="margin-top:25px; text-align:center;">
+         <span style="font-size:0.85rem; font-weight:600; opacity:0.6; text-transform:uppercase;">— Or Continue With —</span><br>
+         <div style="margin-top:15px;">
+            <div id="g_id_onload"
+               data-client_id="912402731958-vlhvtbju60v78a04eb8ggh5jk5j9r4t7.apps.googleusercontent.com"
+               data-context="signin"
+               data-ux_mode="popup"
+               data-callback="handleGoogleOfficialLogin"
+               data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+               data-type="standard"
+               data-shape="pill"
+               data-theme="outline"
+               data-text="signin_with"
+               data-size="large"
+               data-logo_alignment="center">
+            </div>
+         </div>
+      </div>
 
-        <div style="margin-top:20px; text-align:center;">
-           <span style="color:var(--black); opacity:0.6; font-size:0.9rem;">— SECURE LINK —</span><br>
-           <div style="display:flex; justify-content:center; margin-top:20px;">
-              <div id="g_id_onload"
-                 data-client_id="912402731958-vlhvtbju60v78a04eb8ggh5jk5j9r4t7.apps.googleusercontent.com"
-                 data-context="signin"
-                 data-ux_mode="popup"
-                 data-callback="handleGoogleOfficialLogin"
-                 data-auto_prompt="false">
-              </div>
-              <div class="g_id_signin"
-                 data-type="standard"
-                 data-shape="pill"
-                 data-theme="outline"
-                 data-text="signin_with"
-                 data-size="large"
-                 data-logo_alignment="left">
-              </div>
-           </div>
-        </div>
+    </div>
+  </div>
 
+  <!-- Settings Modal (Language) -->
+  <div class="module-modal" id="modal-settings">
+    <div class="modal-content">
+      <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:25px; font-size:2rem;">SYSTEM SETTINGS</h2>
+      <div class="poster-card poster-light">
+         <div class="setting-row">
+            <span class="setting-label">Language / भाषा</span>
+            <select class="form-input" style="width:200px; margin:0;" id="lang-selector">
+               <option value="en">English</option>
+               <option value="hi">Hindi / हिंदी</option>
+               <option value="ml">Malayalam / മലയാളം</option>
+               <option value="te">Telugu / తెలుగు</option>
+               <option value="bn">Bengali / বাংলা</option>
+               <option value="gu">Gujarati / ગુજરાતી</option>
+            </select>
+         </div>
       </div>
     </div>
   </div>
@@ -97,17 +246,7 @@
   <script>
     const API = '/api';
 
-    /* Cursor Logic */
-    const dot = document.getElementById('cursor-dot');
-    const outline = document.getElementById('cursor-outline');
-    window.addEventListener('mousemove', (e) => {
-      dot.style.left = `${e.clientX}px`; dot.style.top = `${e.clientY}px`;
-      outline.animate({ left: `${e.clientX}px`, top: `${e.clientY}px` }, { duration: 500, fill: "forwards", easing: "ease" });
-    });
-    document.querySelectorAll('a, button, input, select, .poster-card').forEach(el => {
-      el.addEventListener('mouseenter', () => { dot.classList.add('focus'); outline.classList.add('focus'); });
-      el.addEventListener('mouseleave', () => { dot.classList.remove('focus'); outline.classList.remove('focus'); });
-    });
+    function openLoginModal() {  document.getElementById('modal-login').classList.add('open'); }
 
     function fillCred(email, pwd, btn) {
       document.getElementById('email-input').value = email;
@@ -159,32 +298,5 @@
       }
     }
   </script>
-
-  <!-- Settings Modal -->
-  <div class="module-modal" id="modal-settings">
-    <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
-    <div class="container" style="max-width:600px; padding-top:40px; margin:0 auto;">
-      <h2 class="text-headline" style="margin-bottom:40px;">SYSTEM SETTINGS</h2>
-      <div class="poster-card poster-dark" style="min-height: auto;">
-         <div class="setting-row">
-            <span class="setting-label">Language / भाषा</span>
-            <select class="form-input lang-selector" style="width:200px; margin:0; border-bottom-color:var(--white); color:var(--white); background:transparent;">
-               <option style="color:#000;" value="en">English</option>
-               <option style="color:#000;" value="hi">Hindi / हिंदी</option>
-               <option style="color:#000;" value="ml">Malayalam / മലയാളം</option>
-               <option style="color:#000;" value="te">Telugu / తెలుగు</option>
-               <option style="color:#000;" value="bn">Bengali / বাংলা</option>
-               <option style="color:#000;" value="gu">Gujarati / ગુજરાતી</option>
-            </select>
-         </div>
-         <div class="setting-row" style="border-bottom:none;">
-            <span class="setting-label">Accessibility</span>
-            <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="document.body.classList.toggle('color-blind');">Toggle High Contrast</button>
-         </div>
-      </div>
-    </div>
-  </div>
-
-
 </body>
 </html>

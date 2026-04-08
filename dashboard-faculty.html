@@ -6,59 +6,70 @@
   <title>Faculty Module — OS</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    body { background-color: var(--white); }
+    .top-section { background: var(--bg-light); border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; padding-bottom: 20px; margin-bottom: 30px; }
+    .hero-panel { display: flex; justify-content: space-between; align-items: center; padding: 40px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 30px; }
   </style>
 </head>
 <body>
-  <div class="cursor-dot" id="cursor-dot"></div><div class="cursor-outline" id="cursor-outline"></div>
+  <div class="top-section">
+    <nav class="navbar-fluid stagger-up d-1">
+      <a href="landing.html" class="brand-logotype">
+        <div style="width:36px;height:36px;background:var(--black);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">C</div>
+        Campus<span>OS</span>
+      </a>
+      <div style="display:flex; gap:15px; align-items:center;">
+        <span class="nav-pill" style="border:none; box-shadow:none; background:transparent;" id="lbl-name">Faculty</span>
+        <button class="nav-icon-btn" onclick="document.getElementById('modal-settings').classList.add('open')">⚙</button>
+        <button class="nav-pill" onclick="logout()" style="background:var(--black); color:var(--white); box-shadow:none;">Logout</button>
+      </div>
+    </nav>
 
-  <nav class="navbar-fluid stagger-up d-1">
-    <a href="landing.html" class="brand-logotype"><div style="width:36px;height:36px;background:var(--blue);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">S</div> SYSTEM PORTAL</a>
-    <div style="display:flex; gap:10px;">
-      <span class="nav-pill" style="border:none;" id="lbl-name">Faculty</span>
-      <button class="nav-pill nav-icon-btn magnetic" onclick="document.getElementById('modal-settings').classList.add('open')">⚙</button>
-      <button class="nav-pill magnetic" onclick="logout()" style="background:var(--black); color:var(--white);">⏻ Logout</button>
+    <div class="container stagger-up d-2" style="margin-top:20px;">
+      <div class="filter-ribbon">
+        <button class="filter-btn active" data-view="overview" onclick="switchView('overview')">Schedule</button>
+        <button class="filter-btn" data-view="queries" onclick="switchView('queries')">Student Q&A</button>
+        <button class="filter-btn" data-view="attendance" onclick="switchView('attendance')">Registry</button>
+        <button class="filter-btn" data-view="blueprint" onclick="switchView('blueprint')">Campus Map</button>
+      </div>
     </div>
-  </nav>
-
-  <div class="filter-ribbon stagger-up d-2">
-    <button class="nav-pill filter-btn active" data-view="overview" onclick="switchView('overview')">Schedule</button>
-    <button class="nav-pill filter-btn" data-view="queries" onclick="switchView('queries')">Student Q&A</button>
-    <button class="nav-pill filter-btn" data-view="attendance" onclick="switchView('attendance')">Registry</button>
   </div>
 
-  <div class="marquee-wrapper wrapper-blue stagger-up d-3"><div class="marquee-content"><span>● INSTRUCTOR MODE LIVE</span><span>● INSTRUCTOR MODE LIVE</span><span>● INSTRUCTOR MODE LIVE</span><span>● INSTRUCTOR MODE LIVE</span></div></div>
-
-  <div id="canvas" class="dashboard-canvas stagger-up d-4"></div>
+  <div class="container stagger-up d-4">
+      <div id="canvas" class="dashboard-canvas"></div>
+  </div>
 
   <!-- Query Reply Modal -->
   <div class="module-modal" id="modal-reply">
-    <button class="close-btn" onclick="closeModal('modal-reply')">✕</button>
-    <div class="container" style="max-width:800px; padding-top:40px;">
-      <h2 class="text-headline" style="margin-bottom:40px;">DISPATCH RESPONSE</h2>
-      <div class="blob-card b-2">
-         <input type="hidden" id="qr-id">
-         <div class="thread-msg" style="border-color:rgba(255,255,255,0.2);">
-           <div class="thread-meta" id="qr-meta"></div>
-           <div class="thread-body" id="qr-q" style="font-weight:700;"></div>
-         </div>
-         <input id="qr-resp" class="form-input" style="color:var(--white); border-bottom-color:var(--white); margin-top:20px;" placeholder="Transmit precise answer..." type="text">
-         <button class="massive-btn" style="background:var(--white); color:var(--black);" onclick="submitReply()">Submit Answer</button>
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('modal-reply')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">DISPATCH RESPONSE</h2>
+      <input type="hidden" id="qr-id">
+      
+      <div class="thread-msg" style="background:var(--bg-light); border:1px solid rgba(0,0,0,0.05); margin-bottom:20px;">
+        <div class="thread-meta" id="qr-meta"></div>
+        <div class="thread-body" id="qr-q" style="font-weight:700;"></div>
       </div>
+      
+      <input id="qr-resp" class="form-input" placeholder="Transmit precise answer..." type="text">
+      <button class="massive-btn" onclick="submitReply()">Submit Answer</button>
     </div>
   </div>
 
   <!-- Attendance Modal -->
   <div class="module-modal" id="modal-att">
-    <button class="close-btn" onclick="closeModal('modal-att')">✕</button>
-    <div class="container" style="max-width:800px; padding-top:40px;">
-      <h2 class="text-headline" style="margin-bottom:40px;">LODGE REGISTER</h2>
-      <div class="blob-card b-1">
-         <p style="margin-bottom:20px;">Use valid system Student ID (e.g. 101, 102)</p>
-         <input id="att-course" class="form-input" style="color:var(--white); border-bottom-color:var(--white);" placeholder="Course Code (e.g. CS101)" type="text">
-         <input id="att-student" class="form-input" style="color:var(--white); border-bottom-color:var(--white);" placeholder="Student ID" type="number">
-         <select id="att-status" class="form-input" style="color:var(--black); background:var(--white);"><option value="Present">Present</option><option value="Absent">Absent</option></select>
-         <button class="massive-btn" style="background:var(--black); border-color:var(--black);" onclick="submitAttendance()">Mark Attendance</button>
-      </div>
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('modal-att')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">LODGE REGISTER</h2>
+      <p style="margin-bottom:20px; opacity:0.6;">Use valid system Student ID (e.g. 101, 102)</p>
+      
+      <input id="att-course" class="form-input" placeholder="Course Code (e.g. CS101)" type="text">
+      <input id="att-student" class="form-input" placeholder="Student ID" type="number">
+      <select id="att-status" class="form-input">
+        <option value="Present">Present</option><option value="Absent">Absent</option>
+      </select>
+      
+      <button class="massive-btn" style="background:var(--black);" onclick="submitAttendance()">Mark Attendance</button>
     </div>
   </div>
 
@@ -66,11 +77,9 @@
     const API = '/api';
     let session = null, facultyId = null;
 
-    const dot = document.getElementById('cursor-dot'); const outline = document.getElementById('cursor-outline');
-    window.addEventListener('mousemove', (e) => { dot.style.left = `${e.clientX}px`; dot.style.top = `${e.clientY}px`; outline.animate({ left: `${e.clientX}px`, top: `${e.clientY}px` }, { duration: 500, fill: "forwards" }); });
-    const attachHover = () => { document.querySelectorAll('a, button, input, select, .blob-card, .fluid-row').forEach(el => { el.addEventListener('mouseenter', () => { dot.classList.add('focus'); outline.classList.add('focus'); }); el.addEventListener('mouseleave', () => { dot.classList.remove('focus'); outline.classList.remove('focus'); }); }); };
-    
-    function openModal(i) { document.getElementById(i).classList.add('open'); } function closeModal(i) { document.getElementById(i).classList.remove('open'); } function logout() { sessionStorage.clear(); window.location.href='index.html'; }
+    function openModal(i) { document.getElementById(i).classList.add('open'); }
+    function closeModal(i) { document.getElementById(i).classList.remove('open'); }
+    function logout() { sessionStorage.clear(); window.location.href='index.html'; }
     async function linkGoogleAccount() {
        const google_email = document.getElementById('link-g-email').value.trim();
        if(!google_email) return;
@@ -91,20 +100,22 @@
     async function switchView(viewName) {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
-      const canvas = document.getElementById('canvas'); canvas.classList.add('canvas-fade');
+      const canvas = document.getElementById('canvas');
+      canvas.style.opacity = 0;
       setTimeout(async () => {
         if(viewName==='overview') await renderOverview();
         if(viewName==='queries') await renderQueries();
         if(viewName==='attendance') await renderAttendance();
-        canvas.classList.remove('canvas-fade'); attachHover();
-      }, 400);
+        if(viewName==='blueprint') await renderBlueprint();
+        canvas.style.opacity = 1;
+      }, 300);
     }
 
-    // 1. Schedule (Timetable filter by faculty if desired, otherwise full)
+    // 1. Schedule
     async function renderOverview() {
-      const html = `<div class="hero-panel"><div><p style="font-family:var(--font-display); font-weight:700; text-transform:uppercase;">Instructor Mode</p><h1 class="text-mega">SCHEDULE</h1></div></div>
+      const html = `<div class="hero-panel"><div><p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Instructor Mode</p><h1 class="text-headline" style="font-size:3rem;">Master Schedule</h1></div></div>
       <div class="grid-masonry" style="padding:0;">
-          <div class="blob-card b-1" id="box-tt" style="grid-column: 1/-1;">Loading...</div>
+          <div class="poster-card poster-blue" id="box-tt" style="grid-column: 1/-1; padding:40px;">Loading...</div>
       </div>`;
       document.getElementById('canvas').innerHTML = html;
       try {
@@ -113,33 +124,33 @@
          let ttMega = '';
          days.forEach(day => {
             const classes = data.filter(x => x.day_of_week === day).sort((a,b)=>a.period_no-b.period_no);
-            ttMega += `<div style="margin-top:20px;"><div class="blob-pill" style="border-color:#FFF; color:#FFF; margin-bottom:10px;">${day.toUpperCase()}</div>`;
+            ttMega += `<div style="margin-top:20px;"><div class="badge" style="background:rgba(255,255,255,0.2); color:#FFF; margin-bottom:10px; display:inline-block;">${day.toUpperCase()}</div>`;
+            if(!classes.length) ttMega += `<div class="fluid-row" style="border-bottom-color:rgba(255,255,255,0.2);"><span class="fluid-row-label">No classes</span></div>`;
             classes.forEach(c => ttMega += `<div class="fluid-row" style="border-bottom-color:rgba(255,255,255,0.2);"><span class="fluid-row-label">${c.start_time} - ${c.end_time}</span><span class="fluid-row-val">${c.course_code} (${c.classroom})</span></div>`);
             ttMega += `</div>`;
          });
-         document.getElementById('box-tt').innerHTML = `<div class="text-mega">TME</div><div class="poster-header"><h3 class="text-headline text-headline">Master Routine</h3></div><div style="column-count: 2; column-gap: 40px; margin-top:40px;">${ttMega}</div>`;
+         document.getElementById('box-tt').innerHTML = `<h3 class="text-headline">Weekly Routine</h3><div style="column-count: 2; column-gap: 40px; margin-top:30px;">${ttMega}</div>`;
       } catch(e){}
     }
 
     // 2. Q&A 
     async function renderQueries() {
-      let html = `<div class="grid-masonry" style="padding:0;"><div class="blob-card b-2" id="box-q" style="grid-column: 1/-1;">Loading...</div></div>`;
+      let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card" id="box-q" style="grid-column: 1/-1;">Loading...</div></div>`;
       document.getElementById('canvas').innerHTML = html;
       try {
-         // Re-using common queries logic for simplicity, fetching all
          const r = await fetch(`${API}/queries`); const queries = await r.json();
          const myQ = queries.filter(q => q.faculty_id === facultyId);
-         let h = `<div class="text-mega">Q&A</div><div class="poster-header"><h3 class="text-headline text-headline">Student Questions</h3></div><div class="poster-content">`;
-         if(!myQ.length) h += '<p>No pending queries.</p>';
+         let h = `<div class="poster-header"><h3 class="poster-title text-headline">Student Questions</h3></div><div class="poster-content" style="margin-top:30px;">`;
+         if(!myQ.length) h += '<p style="opacity:0.6;">No pending queries.</p>';
          myQ.forEach(q => {
             h += `<div class="fluid-row" style="cursor:pointer;" onclick='replyQuery(${JSON.stringify(q)})'>
-               <div style="display:flex; flex-direction:column; max-width:70%;">
+               <div style="display:flex; flex-direction:column; gap:5px; max-width:70%;">
                  <span class="fluid-row-val">${q.question}</span><span class="fluid-row-label" style="opacity:0.6;">Course: ${q.course_name}</span>
                </div>
-               <span class="blob-pill" style="border-color:rgba(255,255,255,0.3); color:${q.status==='answered'?'var(--blue)':'#fff'}; align-self:center;">${q.status.toUpperCase()}</span>
+               <span class="badge" style="${q.status==='answered'?'background:var(--neon-green);':'background:var(--purple); color:var(--white);'};">${q.status.toUpperCase()}</span>
             </div>`;
          });
-         h += `</div>`; document.getElementById('box-q').innerHTML = h; attachHover();
+         h += `</div>`; document.getElementById('box-q').innerHTML = h;
       } catch(e){}
     }
     
@@ -154,17 +165,16 @@
        const id = document.getElementById('qr-id').value; const resp = document.getElementById('qr-resp').value.trim();
        if(!resp) return;
        const r = await fetch(`${API}/queries/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({response:resp}) });
-       if(r.ok){ closeModal('modal-reply'); alert('Response sent.'); switchView('queries'); }
+       if(r.ok){ closeModal('modal-reply'); switchView('queries'); }
     }
 
     // 3. Attendance Marker
     async function renderAttendance() {
-       let html = `<div class="grid-masonry" style="padding:0;"><div class="blob-card" style="grid-column: 1/-1; min-height:60vh;">
-         <div class="text-mega" style="opacity:0.04;">REGISTRY</div>
-         <div class="poster-header"><h3 class="text-headline text-headline">Class Database</h3><button class="massive-btn" style="width:auto; padding:10px 40px; border-radius:100px;" onclick="openModal('modal-att')">+ Mark Entry</button></div>
-         <div style="margin-top:40px; font-family:var(--font-display); font-size:2rem; opacity:0.5;">Use the dispatch button above to lodge attendance entries into the root database.</div>
+       let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card poster-green" style="grid-column: 1/-1; min-height:60vh; padding:40px;">
+         <div class="poster-header"><h3 class="text-headline">Class Database</h3><button class="nav-pill" style="background:var(--purple); color:var(--white);" onclick="openModal('modal-att')">+ Mark Entry</button></div>
+         <div style="margin-top:50px; font-family:var(--font-display); font-size:2.5rem; font-weight:600; opacity:0.5; line-height:1.2;">Use the dispatch button above to lodge attendance entries into the root database.</div>
        </div></div>`;
-       document.getElementById('canvas').innerHTML = html; attachHover();
+       document.getElementById('canvas').innerHTML = html;
     }
     
     async function submitAttendance() {
@@ -175,39 +185,49 @@
           status: document.getElementById('att-status').value
        };
        const r = await fetch(`${API}/attendance`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-       if(r.ok) { alert('Successfully registered.'); closeModal('modal-att'); document.getElementById('att-student').value=''; } else { alert('Failed.'); }
+       if(r.ok) { closeModal('modal-att'); document.getElementById('att-student').value=''; } else { alert('Failed.'); }
     }
-  </script>
+
+    // 4. Campus Blueprint
+    async function renderBlueprint() {
+      let html = `<div class="grid-masonry" style="padding:0;">
+        <div class="poster-card poster-light" style="grid-column:1/-1; padding:40px; background:var(--white); color:var(--black); border:var(--border-line);">
+           <h2 class="text-headline">CAMPUS BLUEPRINT</h2>
+           <div id="bp-preview" style="margin-top:20px; background:rgba(0,0,0,0.02); border-radius:var(--radius-lg); padding:20px; text-align:center;">
+              <span style="opacity:0.5;">Loading Map Data...</span>
+           </div>
+        </div>
+      </div>`;
+      document.getElementById('canvas').innerHTML = html;
+      
+      const r = await fetch(`${API}/settings/blueprint`);
+      const data = await r.json();
+      if(data.blueprint) {
+         document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg); border: 2px solid rgba(0,0,0,0.1);">`;
+      } else {
+         document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.6;">The internal campus map has not been published yet. Check back later.</span>`;
+      }
+    }
   </script>
 
   <!-- Settings Modal -->
   <div class="module-modal" id="modal-settings">
-    <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
-    <div class="container" style="max-width:600px; padding-top:40px; margin:0 auto;">
-      <h2 class="text-headline" style="margin-bottom:40px;">SYSTEM SETTINGS</h2>
-      <div class="poster-card poster-dark" style="min-height: auto;">
-         <div class="setting-row">
-            <span class="setting-label">Language / भाषा</span>
-            <select class="form-input lang-selector" style="width:200px; margin:0; border-bottom-color:var(--white); color:var(--white); background:transparent;">
-               <option style="color:#000;" value="en">English</option>
-               <option style="color:#000;" value="hi">Hindi / हिंदी</option>
-               <option style="color:#000;" value="ml">Malayalam / മലയാളം</option>
-               <option style="color:#000;" value="te">Telugu / తెలుగు</option>
-               <option style="color:#000;" value="bn">Bengali / বাংলা</option>
-               <option style="color:#000;" value="gu">Gujarati / ગુજરાતી</option>
-            </select>
-         </div>
-         <div class="setting-row">
-            <span class="setting-label">Accessibility</span>
-            <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="document.body.classList.toggle('color-blind');">Toggle High Contrast</button>
-         </div>
-         <div class="setting-row" style="border-bottom:none; display:flex; flex-direction:column; align-items:flex-start; gap:10px;">
-            <span class="setting-label">External Integrations</span>
-            <div style="display:flex; gap:10px; width:100%;">
-                <input type="email" id="link-g-email" class="form-input" style="color:var(--white); border-bottom-color:var(--white); margin:0; flex:1;" placeholder="Link Google Email">
-                <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="linkGoogleAccount()">Bind Account</button>
-            </div>
-         </div>
+    <div class="modal-content">
+      <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">SYSTEM SETTINGS</h2>
+      <div class="setting-row">
+        <span class="setting-label">Language / भाषा</span>
+        <select class="form-input" style="width:200px; margin:0;" id="lang-selector">
+           <option value="en">English</option>
+           <option value="hi">Hindi / हिंदी</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">External Integrations</span>
+        <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
+            <input type="email" id="link-g-email" class="form-input" style="margin:0; flex:1;" placeholder="Google Email">
+            <button class="nav-pill" style="border-radius:var(--radius-lg);" onclick="linkGoogleAccount()">Bind Account</button>
+        </div>
       </div>
     </div>
   </div>

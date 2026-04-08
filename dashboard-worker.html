@@ -6,49 +6,57 @@
   <title>Worker Terminal — OS</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .hero-panel { border-radius: var(--radius-lg); background: var(--bg-primary); padding: 40px; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; border: var(--border-line); position: relative; overflow: hidden; }
-    .hero-panel::after { content: 'WRKR'; position: absolute; right: -50px; bottom: -50px; font-size: 15rem; font-family: var(--font-display); font-weight: 900; opacity: 0.05; pointer-events: none; z-index: 1;}
-    .hero-panel h1 { position: relative; z-index: 2; }
+    body { background-color: var(--white); }
+    .top-section { background: var(--bg-light); border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; padding-bottom: 20px; margin-bottom: 30px; }
+    .hero-panel { display: flex; justify-content: space-between; align-items: center; padding: 40px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 30px; }
   </style>
 </head>
 <body>
-  <div class="cursor-dot" id="cursor-dot"></div><div class="cursor-outline" id="cursor-outline"></div>
+  <div class="top-section">
+    <nav class="navbar-fluid stagger-up d-1">
+      <a href="landing.html" class="brand-logotype">
+        <div style="width:36px;height:36px;background:var(--black);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">C</div>
+        Campus<span>OS</span>
+      </a>
+      <div style="display:flex; gap:15px; align-items:center;">
+        <span class="nav-pill" style="border:none; box-shadow:none; background:transparent;" id="lbl-name">Worker</span>
+        <button class="nav-pill filter-btn active" onclick="switchView('overview')">Tasks</button>
+        <button class="nav-pill filter-btn" onclick="switchView('blueprint')">Campus Map</button>
+        <button class="nav-icon-btn" onclick="document.getElementById('modal-settings').classList.add('open')">⚙</button>
+        <button class="nav-pill" onclick="logout()" style="background:var(--black); color:var(--white); box-shadow:none;">Logout</button>
+      </div>
+    </nav>
+  </div>
 
-  <nav class="navbar-fluid stagger-up d-1">
-    <a href="landing.html" class="brand-logotype"><div style="width:36px;height:36px;background:var(--blue);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">S</div> WORKER OS</a>
-    <div style="display:flex; gap:10px;"><span class="nav-pill" style="border:none;" id="lbl-name">Worker</span><button class="nav-pill nav-icon-btn magnetic" onclick="document.getElementById('modal-settings').classList.add('open')">⚙</button><button class="nav-pill magnetic" onclick="logout()" style="background:var(--black); color:var(--white);">⏻ Logout</button></div>
-  </nav>
-
-  <div class="marquee-wrapper stagger-up d-2"><div class="marquee-content"><span>● MAINTENANCE QUEUE ACTIVE</span><span>● MAINTENANCE QUEUE ACTIVE</span><span>● MAINTENANCE QUEUE ACTIVE</span></div></div>
-
-  <div class="dashboard-canvas stagger-up d-3">
-     <div class="hero-panel"><div><p style="font-family:var(--font-display); font-weight:700; text-transform:uppercase;">Assignment Tracker</p><h1 class="text-mega" style="font-size:clamp(3rem, 8vw, 8rem);">MAINTENANCE</h1></div></div>
-     <div class="grid-masonry" style="padding:0;">
-        <div class="blob-card b-2" id="box-tasks" style="grid-column: 1/-1;">Loading tasks...</div>
-     </div>
+  <div class="container stagger-up d-4">
+      <div id="canvas" class="dashboard-canvas">
+         <div class="hero-panel"><div><p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Assignment Tracker</p><h1 class="text-headline" style="font-size:3rem;">Maintenance Dashboard</h1></div></div>
+         <div class="grid-masonry" style="padding:0;">
+            <div class="poster-card poster-blue" id="box-tasks" style="grid-column: 1/-1; padding:40px;">Loading tasks...</div>
+         </div>
+      </div>
   </div>
 
   <div class="module-modal" id="modal-task">
-    <button class="close-btn" onclick="closeModal('modal-task')">✕</button>
-    <div class="container" style="max-width:800px; padding-top:40px;">
-      <h2 class="text-headline" style="margin-bottom:40px;">UPDATE STATUS</h2>
-      <div class="blob-card b-1">
-         <input type="hidden" id="tk-id">
-         <h3 class="text-headline" id="tk-title" style="margin-bottom:20px;"></h3>
-         <select id="tk-status" class="form-input" style="color:var(--black); background:var(--white);"><option value="assigned">Assigned</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option></select>
-         <button class="massive-btn" style="background:var(--black); border-color:var(--black);" onclick="submitUpdate()">Save State</button>
-      </div>
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('modal-task')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">UPDATE STATUS</h2>
+      <input type="hidden" id="tk-id">
+      <h3 class="text-headline" id="tk-title" style="margin-bottom:20px;"></h3>
+      <select id="tk-status" class="form-input">
+        <option value="assigned">Assigned</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
+      </select>
+      <button class="massive-btn" style="background:var(--black);" onclick="submitUpdate()">Save State</button>
     </div>
   </div>
 
   <script>
     const API = '/api';
     let session = null;
-    const dot = document.getElementById('cursor-dot'); const outline = document.getElementById('cursor-outline');
-    window.addEventListener('mousemove', (e) => { dot.style.left = `${e.clientX}px`; dot.style.top = `${e.clientY}px`; outline.animate({ left: `${e.clientX}px`, top: `${e.clientY}px` }, { duration: 500, fill: "forwards" }); });
-    const attachHover = () => { document.querySelectorAll('a, button, input, select, .blob-card, .fluid-row').forEach(el => { el.addEventListener('mouseenter', () => { dot.classList.add('focus'); outline.classList.add('focus'); }); el.addEventListener('mouseleave', () => { dot.classList.remove('focus'); outline.classList.remove('focus'); }); }); };
     
-    function openModal(id) { document.getElementById(id).classList.add('open'); } function closeModal(id) { document.getElementById(id).classList.remove('open'); } function logout() { sessionStorage.clear(); window.location.href='index.html'; }
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function logout() { sessionStorage.clear(); window.location.href='index.html'; }
     async function linkGoogleAccount() {
        const google_email = document.getElementById('link-g-email').value.trim();
        if(!google_email) return;
@@ -68,16 +76,52 @@
     async function fetchTasks() {
        try {
          const r = await fetch(`${API}/issues?worker_id=${session.user_id}`); const issues = await r.json();
-         let html = `<div class="text-mega">QUEUE</div><div class="poster-header"><h3 class="text-headline text-headline">Active Queue</h3></div><div class="poster-content" style="margin-top:40px;">`;
-         if(!issues.length) html += '<p>No pending assignments.</p>';
+         let html = `
+         <div class="hero-panel"><div><p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Assignment Tracker</p><h1 class="text-headline" style="font-size:3rem;">Maintenance Dashboard</h1></div></div>
+         <div class="grid-masonry" style="padding:0;">
+            <div class="poster-card poster-blue" id="box-tasks" style="grid-column: 1/-1; padding:40px;">
+           <div class="poster-header"><h3 class="poster-title text-headline">Active Queue</h3></div><div class="poster-content" style="margin-top:40px;">`;
+         if(!issues.length) html += '<p style="opacity:0.6;">No pending assignments.</p>';
          issues.forEach(i => {
            html += `<div class="fluid-row" style="cursor:pointer; border-bottom-color:rgba(255,255,255,0.2);" onclick='editTask(${JSON.stringify(i)})'>
-             <div style="display:flex; flex-direction:column; gap:5px;"><span class="fluid-row-val">${i.title} (${i.location})</span><span class="fluid-row-label" style="opacity:0.6;">${i.category} · ${i.severity.toUpperCase()}</span></div>
-             <span class="blob-pill" style="border-color:rgba(255,255,255,0.3); color:${i.status==='resolved'?'green':'var(--accent)'}; align-self:center;">${i.status.toUpperCase()}</span>
+             <div style="display:flex; flex-direction:column; gap:5px;"><span class="fluid-row-val">${i.title} (${i.location})</span><span class="fluid-row-label">${i.category} · ${i.severity.toUpperCase()}</span></div>
+             <span class="badge" style="background:var(--white); color:${i.status==='resolved'?'#000':'var(--purple)'};">${i.status.toUpperCase()}</span>
            </div>`;
          });
-         document.getElementById('box-tasks').innerHTML = html + `</div>`; attachHover();
+         document.getElementById('canvas').innerHTML = html + `</div></div></div>`;
        } catch(e) {}
+    }
+
+    function switchView(viewName) {
+       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+       event.target.classList.add('active');
+       const canvas = document.getElementById('canvas'); canvas.style.opacity = 0;
+       setTimeout(async () => {
+         if(viewName === 'overview') await fetchTasks();
+         if(viewName === 'blueprint') await renderBlueprint();
+         canvas.style.opacity = 1;
+       }, 300);
+    }
+    
+    // Campus Map Blueprint
+    async function renderBlueprint() {
+      let html = `<div class="grid-masonry" style="padding:0;">
+        <div class="poster-card poster-light" style="grid-column:1/-1; padding:40px; background:var(--white); color:var(--black); border:var(--border-line);">
+           <h2 class="text-headline">CAMPUS BLUEPRINT</h2>
+           <div id="bp-preview" style="margin-top:20px; background:rgba(0,0,0,0.02); border-radius:var(--radius-lg); padding:20px; text-align:center;">
+              <span style="opacity:0.5;">Loading Map Data...</span>
+           </div>
+        </div>
+      </div>`;
+      document.getElementById('canvas').innerHTML = html;
+      
+      const r = await fetch(`${API}/settings/blueprint`);
+      const data = await r.json();
+      if(data.blueprint) {
+         document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg); border: 2px solid rgba(0,0,0,0.1);">`;
+      } else {
+         document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.6;">The internal campus map has not been published yet. Check back later.</span>`;
+      }
     }
 
     function editTask(i) {
@@ -88,39 +132,28 @@
        const u = { status: document.getElementById('tk-status').value };
        const id = document.getElementById('tk-id').value;
        const r = await fetch(`${API}/issues/${id}/status`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(u) });
-       if(r.ok){ closeModal('modal-task'); alert('Synchronized.'); fetchTasks(); }
+       if(r.ok){ closeModal('modal-task'); fetchTasks(); }
     }
-  </script>
   </script>
 
   <!-- Settings Modal -->
   <div class="module-modal" id="modal-settings">
-    <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
-    <div class="container" style="max-width:600px; padding-top:40px; margin:0 auto;">
-      <h2 class="text-headline" style="margin-bottom:40px;">SYSTEM SETTINGS</h2>
-      <div class="poster-card poster-dark" style="min-height: auto;">
-         <div class="setting-row">
-            <span class="setting-label">Language / भाषा</span>
-            <select class="form-input lang-selector" style="width:200px; margin:0; border-bottom-color:var(--white); color:var(--white); background:transparent;">
-               <option style="color:#000;" value="en">English</option>
-               <option style="color:#000;" value="hi">Hindi / हिंदी</option>
-               <option style="color:#000;" value="ml">Malayalam / മലയാളം</option>
-               <option style="color:#000;" value="te">Telugu / తెలుగు</option>
-               <option style="color:#000;" value="bn">Bengali / বাংলা</option>
-               <option style="color:#000;" value="gu">Gujarati / ગુજરાતી</option>
-            </select>
-         </div>
-         <div class="setting-row">
-            <span class="setting-label">Accessibility</span>
-            <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="document.body.classList.toggle('color-blind');">Toggle High Contrast</button>
-         </div>
-         <div class="setting-row" style="border-bottom:none; display:flex; flex-direction:column; align-items:flex-start; gap:10px;">
-            <span class="setting-label">External Integrations</span>
-            <div style="display:flex; gap:10px; width:100%;">
-                <input type="email" id="link-g-email" class="form-input" style="color:var(--white); border-bottom-color:var(--white); margin:0; flex:1;" placeholder="Link Google Email">
-                <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="linkGoogleAccount()">Bind Account</button>
-            </div>
-         </div>
+    <div class="modal-content">
+      <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">SYSTEM SETTINGS</h2>
+      <div class="setting-row">
+        <span class="setting-label">Language / भाषा</span>
+        <select class="form-input" style="width:200px; margin:0;" id="lang-selector">
+           <option value="en">English</option>
+           <option value="hi">Hindi / हिंदी</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">External Integrations</span>
+        <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
+            <input type="email" id="link-g-email" class="form-input" style="margin:0; flex:1;" placeholder="Google Email">
+            <button class="nav-pill" style="border-radius:var(--radius-lg);" onclick="linkGoogleAccount()">Bind Account</button>
+        </div>
       </div>
     </div>
   </div>

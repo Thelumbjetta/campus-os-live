@@ -5,126 +5,80 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Campus — OS</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; margin-top: 60px; }
+    @media(max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } }
+    .hero-graphic { background: var(--purple); border-radius: 40px; position: relative; height: 500px; border: var(--border-thick); display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: inset -20px -20px 0 rgba(0,0,0,0.05); color:white; }
+  </style>
 </head>
 <body>
   <script src="translations.js"></script>
-  <!-- Custom Cursor -->
-  <div class="cursor-dot" id="cursor-dot"></div>
-  <div class="cursor-outline" id="cursor-outline"></div>
 
   <!-- Navbar -->
   <nav class="navbar-fluid stagger-up d-1">
     <a href="landing.html" class="brand-logotype">
-      <div style="width:36px;height:36px;background:var(--blue);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">S</div>
-      <span data-i18n="app_smart">SMART CAMPUS</span>
+      <div style="width:36px;height:36px;background:var(--black);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">C</div>
+      Campus<span>OS</span>
     </a>
     <div style="display: flex; gap: 15px; align-items: center;">
-      <select class="lang-selector magnetic" aria-label="Select Language">
+      <select class="nav-pill" style="border:none; background:transparent;" aria-label="Select Language">
         <option value="en">English</option>
-        <option value="hi">Hindi / हिंदी</option>
-        <option value="ml">Malayalam / മലയാളം</option>
-        <option value="te">Telugu / తెలుగు</option>
-        <option value="bn">Bengali / বাংলা</option>
-        <option value="gu">Gujarati / ગુજરાતી</option>
+        <option value="hi">Hindi</option>
+        <option value="ml">Malayalam</option>
       </select>
-      <a href="index.html" class="nav-pill magnetic" data-i18n="student_portal">Student Portal</a>
+      <a href="index.html" class="nav-pill" style="background:var(--purple); color:var(--white);">Student Portal</a>
     </div>
   </nav>
 
-  <!-- Marquee -->
-  <div class="marquee-wrapper stagger-up d-2">
-    <div class="marquee-content">
-      <span data-i18n="marquee_gen">● NEXT GEN ACADEMIC MANAGEMENT ● ENGINEERED FOR IIITV</span>
-      <span data-i18n="marquee_gen">● NEXT GEN ACADEMIC MANAGEMENT ● ENGINEERED FOR IIITV</span>
-      <span data-i18n="marquee_gen">● NEXT GEN ACADEMIC MANAGEMENT ● ENGINEERED FOR IIITV</span>
-    </div>
-  </div>
-
-  <div style="padding: 20px;" class="stagger-up d-3">
-    <!-- Huge Typography Header Section layout -->
-    <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px; border-bottom:var(--border-line); padding-bottom:20px; margin-bottom:20px;">
-      
-      <!-- Graphic Poster Left -->
-      <div class="poster-card poster-dark" style="justify-content:space-between;">
-        <div class="poster-huge-bg">26</div>
-        <div>
-          <h2 class="text-headline">BUILDING<br>THE FUTURE<br>OF DATA</h2>
-        </div>
-        <div>
-          <div class="poster-pill">#Architecture</div>
-          <div class="poster-pill">#Systems</div>
-          <p style="margin-top:20px;opacity:0.8;max-width:80%;">We threw away traditional grids to bring you bleeding-edge speed and fluidity.</p>
-        </div>
-      </div>
-      
-      <!-- Graphic Poster Right (The Blue Beast) -->
-      <div class="poster-card poster-blue" style="justify-content:flex-end;">
-        <div class="poster-huge-bg">SYS</div>
-        <div>
-          <h1 class="text-mega">SYSTEM<br>OS</h1>
-        </div>
-        <div class="poster-icon" style="position:absolute; top:40px; right:40px; width:80px; height:80px; font-size:2.5rem;">↘</div>
-      </div>
-
-    </div>
-
-    <!-- The Fluid Poster Masonry Grid -->
-    <div class="grid-masonry stagger-up d-4" style="padding:0; padding-bottom:40px;">
-      
-      <div class="poster-card">
-        <div class="poster-icon">📸</div>
-        <h3 class="poster-title" style="margin-top:auto;">Issue Tracking</h3>
-        <div class="poster-content">
-          <div class="fluid-row">
-            <span class="fluid-row-label">Capture</span><span class="fluid-row-val">Active</span>
+  <!-- 1. Hero Section -->
+  <section class="section-light stagger-up d-2">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Next Gen Management</p>
+          <h1 class="text-mega" style="font-size:clamp(2.5rem, 6vw, 5rem);">Building The <span style="color:var(--purple);">Future</span><br>Of Data <span style="font-family:serif;font-style:italic;">~</span></h1>
+          <p style="margin: 30px 0; font-size: 1.1rem; line-height: 1.6; max-width: 450px; opacity: 0.8;">
+            We threw away traditional grids to bring you bleeding-edge speed and fluidity. Seamlessly connect Attendance, Forms, and the weekly schedule block.
+          </p>
+          <div style="display:flex; gap:10px;">
+             <span class="badge" style="background:var(--gray-button); padding:8px 16px;">#Architecture</span>
+             <span class="badge" style="background:var(--gray-button); padding:8px 16px;">#Systems</span>
           </div>
-          <div class="fluid-row">
-            <span class="fluid-row-label">Auto-Route</span><span class="fluid-row-val">Live</span>
-          </div>
-          <p style="margin-top:20px; font-size:0.9rem; color:var(--muted);">Fluid routing to workers based on image AI and gps capture tags.</p>
+          <br><br>
+          <a href="index.html" style="text-decoration:none;"><button class="massive-btn" style="width:auto; padding:15px 40px;">Initialize Gateway</button></a>
+        </div>
+        
+        <div class="hero-graphic">
+           <div style="font-family:var(--font-display); font-weight:800; font-size:15rem; opacity:0.2; position:absolute; right:-20px; bottom:-40px;">OS</div>
+           <div style="position:relative; z-index:2; text-align:center;">
+              <h2 style="font-family:var(--font-display); font-size:4rem;">SYSTEM</h2>
+              <p style="font-size:1.5rem; opacity:0.8;">Engineered for Performance</p>
+           </div>
         </div>
       </div>
-
-      <div class="image-clip-card">
-        <div class="image-clip-bg"></div>
-        <div class="image-clip-content">
-          <div class="poster-pill" style="background:var(--blue);border:none;color:#fff;">Immersive</div>
-          <h2 class="text-headline">CAMPUS EXPLORER</h2>
-        </div>
-      </div>
-
-      <div class="poster-card poster-dark">
-         <div class="poster-icon">🗄️</div>
-         <h3 class="poster-title" style="margin-top:auto;">The Hub</h3>
-         <div class="poster-content">
-           <div class="poster-pill">Role: Core</div>
-           <p style="color:#aaa; font-size:0.9rem; margin-top:20px;">Seamlessly connect Attendance grids, Mess Menus, and the weekly schedule block inside an intensely fluid UI poster layout.</p>
-           <a href="index.html" style="text-decoration:none;"><button class="massive-btn" style="margin-top:30px;font-size:1rem;color:var(--white);">Initialize Gateway</button></a>
-         </div>
-         <div class="poster-huge-bg">HUB</div>
-      </div>
-
     </div>
-  </div>
+  </section>
 
-  <script>
-    // Custom Cursor & Magnetic Elements Logic
-    const dot = document.getElementById('cursor-dot');
-    const outline = document.getElementById('cursor-outline');
-    
-    window.addEventListener('mousemove', (e) => {
-      // Soft tweening for outline
-      const posX = e.clientX; const posY = e.clientY;
-      dot.style.left = `${posX}px`; dot.style.top = `${posY}px`;
+  <!-- 2. Dark Feature Section -->
+  <section class="section-dark stagger-up d-3">
+    <div class="container" style="text-align:center;">
+      <h2 class="text-headline">Issue Tracking &<br><b>Auto-Routing</b></h2>
+      <div class="badge" style="background:var(--neon-green); color:var(--black); padding:10px 20px; font-size:1rem; margin:30px 0 50px 0;">Fluid routing to workers based on image tags.</div>
       
-      // We animate the outline via requestAnimationFrame for buttery smoothness
-      outline.animate({ left: `${posX}px`, top: `${posY}px` }, { duration: 500, fill: "forwards", easing: "ease" });
-    });
-
-    document.querySelectorAll('a, button, .poster-card, .magnetic').forEach(el => {
-      el.addEventListener('mouseenter', () => { dot.classList.add('focus'); outline.classList.add('focus'); });
-      el.addEventListener('mouseleave', () => { dot.classList.remove('focus'); outline.classList.remove('focus'); });
-    });
-  </script>
+      <div class="grid-masonry" style="padding:0; margin-top:20px; text-align:left;">
+        <div class="poster-card poster-green" style="padding:40px;">
+          <div class="poster-icon" style="background:var(--white);">📸</div>
+          <h3 class="poster-title" style="margin-top:20px; font-size:2rem;">Capture</h3>
+          <p style="font-weight:600; font-size:1.1rem; margin-top:10px; opacity:0.8;">Active GPS & AI Image Validation</p>
+        </div>
+        
+        <div class="poster-card poster-light" style="padding:40px; background:var(--white); color:var(--black);">
+          <div class="poster-icon" style="background:var(--bg-light);">🗄️</div>
+          <h3 class="poster-title" style="margin-top:20px; font-size:2rem;">The Hub</h3>
+          <p style="font-weight:600; font-size:1.1rem; margin-top:10px; opacity:0.8;">Role: Core System Operations</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </body>
 </html>

@@ -5,66 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Command — OS</title>
   <link rel="stylesheet" href="style.css">
-    .hero-panel { border-radius: var(--radius-lg); background: var(--bg-primary); padding: 40px; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; border: var(--border-line); position: relative; overflow: hidden; }
-    .hero-panel::after { content: 'ADMIN'; position: absolute; right: -50px; bottom: -50px; font-size: 15rem; font-family: var(--font-display); font-weight: 900; opacity: 0.05; pointer-events: none; z-index: 1;}
-    .hero-panel h1 { position: relative; z-index: 2; }
+  <style>
+    body { background-color: var(--white); }
+    .top-section { background: var(--bg-light); border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; padding-bottom: 20px; margin-bottom: 30px; }
+    .hero-panel { display: flex; justify-content: space-between; align-items: center; padding: 40px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 30px; }
+  </style>
 </head>
 <body>
-  <div class="cursor-dot" id="cursor-dot"></div>
-  <div class="cursor-outline" id="cursor-outline"></div>
+  <div class="top-section">
+    <!-- Navbar -->
+    <nav class="navbar-fluid stagger-up d-1">
+      <a href="landing.html" class="brand-logotype">
+        <div style="width:36px;height:36px;background:var(--black);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">C</div>
+        Campus<span>OS</span>
+      </a>
+      <div style="display:flex; gap:15px; align-items:center;">
+        <span class="nav-pill" style="border:none; box-shadow:none; background:transparent;" id="lbl-name">Admin</span>
+        <button class="nav-icon-btn" onclick="document.getElementById('modal-settings').classList.add('open')">⚙</button>
+        <button class="nav-pill" onclick="logout()" style="background:var(--black); color:var(--white); box-shadow:none;">Logout</button>
+      </div>
+    </nav>
 
-  <nav class="navbar-fluid stagger-up d-1">
-    <a href="landing.html" class="brand-logotype">
-      <div style="width:36px;height:36px;background:var(--blue);border-radius:50%;color:var(--white);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">S</div>
-      SYSTEM PORTAL
-    </a>
-    <div style="display:flex; gap:10px;">
-      <span class="nav-pill" style="border:none;" id="lbl-name">Admin</span>
-      <button class="nav-pill nav-icon-btn magnetic" onclick="document.getElementById('modal-settings').classList.add('open')">⚙</button>
-      <button class="nav-pill magnetic" onclick="logout()" style="background:var(--black); color:var(--white);">⏻ Logout</button>
+    <!-- Filters -->
+    <div class="container stagger-up d-2" style="margin-top:20px;">
+      <div class="filter-ribbon">
+        <button class="filter-btn active" data-view="overview" onclick="switchView('overview')">Overview</button>
+        <button class="filter-btn" data-view="users" onclick="switchView('users')">Users</button>
+        <button class="filter-btn" data-view="issues" onclick="switchView('issues')">Live Issues</button>
+        <button class="filter-btn" data-view="notices" onclick="switchView('notices')">Broadcasts</button>
+        <button class="filter-btn" data-view="blueprint" onclick="switchView('blueprint')">Campus Blueprint</button>
+      </div>
     </div>
-  </nav>
-
-  <div class="filter-ribbon stagger-up d-2">
-    <button class="nav-pill filter-btn active" data-view="overview" onclick="switchView('overview')">Overview</button>
-    <button class="nav-pill filter-btn" data-view="users" onclick="switchView('users')">Users</button>
-    <button class="nav-pill filter-btn" data-view="issues" onclick="switchView('issues')">Live Issues</button>
-    <button class="nav-pill filter-btn" data-view="notices" onclick="switchView('notices')">Broadcasts</button>
   </div>
 
-  <div class="marquee-wrapper stagger-up d-3"><div class="marquee-content"><span>● ADMIN PRIVILEGES ACCEPTED</span><span>● ADMIN PRIVILEGES ACCEPTED</span><span>● ADMIN PRIVILEGES ACCEPTED</span><span>● ADMIN PRIVILEGES ACCEPTED</span></div></div>
-
-  <div id="canvas" class="dashboard-canvas stagger-up d-4"></div>
+  <div class="container stagger-up d-4">
+      <div id="canvas" class="dashboard-canvas"></div>
+  </div>
 
   <!-- User Creation Modal -->
   <div class="module-modal" id="modal-user">
-    <button class="close-btn" onclick="closeModal('modal-user')">✕</button>
-    <div class="container" style="max-width:800px; padding-top:40px;">
-      <h2 class="text-headline" style="margin-bottom:40px;">NEW SYS USER</h2>
-      <div class="poster-card poster-blue">
-         <input id="u-name" class="form-input" style="color:var(--white); border-bottom-color:var(--white);" placeholder="Full Name" type="text">
-         <input id="u-email" class="form-input" style="color:var(--white); border-bottom-color:var(--white);" placeholder="Email Address" type="email">
-         <input id="u-password" class="form-input" style="color:var(--white); border-bottom-color:var(--white);" placeholder="Password" type="password">
-         <select id="u-role" class="form-input" style="color:var(--black); background:var(--white);"><option value="student">Student</option><option value="faculty">Faculty</option><option value="admin">Admin</option><option value="worker">Worker</option><option value="guard">Guard</option></select>
-         <button class="massive-btn" style="background:var(--black); border-color:var(--black);" onclick="submitUser()">Register User &rarr;</button>
-      </div>
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('modal-user')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">NEW SYS USER</h2>
+      <input id="u-name" class="form-input" placeholder="Full Name" type="text">
+      <input id="u-email" class="form-input" placeholder="Email Address" type="email">
+      <input id="u-password" class="form-input" placeholder="Password" type="password">
+      <select id="u-role" class="form-input"><option value="student">Student</option><option value="faculty">Faculty</option><option value="admin">Admin</option><option value="worker">Worker</option><option value="guard">Guard</option></select>
+      <button class="massive-btn" onclick="submitUser()">Register User &rarr;</button>
     </div>
   </div>
 
   <!-- Re-assign Issue Modal -->
   <div class="module-modal" id="modal-issue-edit">
-    <button class="close-btn" onclick="closeModal('modal-issue-edit')">✕</button>
-    <div class="container" style="max-width:800px; padding-top:40px;">
-      <h2 class="text-headline" style="margin-bottom:40px;">UPDATE ISSUE</h2>
-      <div class="poster-card poster-dark">
-         <input type="hidden" id="ie-id">
-         <input type="hidden" id="ie-assignment">
-         <div class="fluid-row"><span class="fluid-row-label">Ticket ID</span><span class="fluid-row-val" id="ie-lbl-id"></span></div>
-         <div id="ie-personnel-grid" class="personnel-grid"></div>
-         <select id="ie-status" class="form-input" style="color:var(--black); background:var(--white); margin-top:20px;"><option value="pending">Pending</option><option value="assigned">Assigned</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option></select>
-         <button class="massive-btn" id="ie-submit-btn" style="background:var(--white); color:var(--black);" onclick="submitIssueUpdate()">Dispatch Personnel</button>
-         <div class="dispatch-loader" id="ie-loader">Dispatching Personnel...</div>
-      </div>
+    <div class="modal-content" style="max-width:800px;">
+      <button class="close-btn" onclick="closeModal('modal-issue-edit')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">UPDATE ISSUE</h2>
+      <input type="hidden" id="ie-id">
+      <input type="hidden" id="ie-assignment">
+      
+      <div class="fluid-row" style="margin-bottom:20px;"><span class="fluid-row-label">Ticket ID</span><span class="fluid-row-val" id="ie-lbl-id"></span></div>
+      
+      <h3 style="margin-bottom:15px; font-weight:600;">Dispatch Personnel</h3>
+      <div id="ie-personnel-grid" class="personnel-grid"></div>
+      
+      <select id="ie-status" class="form-input" style="margin-top:30px;">
+        <option value="pending">Pending</option><option value="assigned">Assigned</option>
+        <option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
+      </select>
+      
+      <button class="massive-btn" id="ie-submit-btn" style="background:var(--black);" onclick="submitIssueUpdate()">Confirm Dispatch</button>
+      <div class="dispatch-loader" id="ie-loader">Dispatching Personnel...</div>
     </div>
   </div>
 
@@ -74,11 +84,9 @@
     let allUsers = [];
     let allIssues = [];
 
-    const dot = document.getElementById('cursor-dot'); const outline = document.getElementById('cursor-outline');
-    window.addEventListener('mousemove', (e) => { dot.style.left = `${e.clientX}px`; dot.style.top = `${e.clientY}px`; outline.animate({ left: `${e.clientX}px`, top: `${e.clientY}px` }, { duration: 500, fill: "forwards" }); });
-    const attachHover = () => { document.querySelectorAll('a, button, input, select, .poster-card, .fluid-row').forEach(el => { el.addEventListener('mouseenter', () => { dot.classList.add('focus'); outline.classList.add('focus'); }); el.addEventListener('mouseleave', () => { dot.classList.remove('focus'); outline.classList.remove('focus'); }); }); };
-    
-    function openModal(i) { document.getElementById(i).classList.add('open'); } function closeModal(i) { document.getElementById(i).classList.remove('open'); } function logout() { sessionStorage.clear(); window.location.href='index.html'; }
+    function openModal(i) { document.getElementById(i).classList.add('open'); }
+    function closeModal(i) { document.getElementById(i).classList.remove('open'); }
+    function logout() { sessionStorage.clear(); window.location.href='index.html'; }
     async function linkGoogleAccount() {
        const google_email = document.getElementById('link-g-email').value.trim();
        if(!google_email) return;
@@ -103,24 +111,26 @@
     async function switchView(viewName) {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
-      const canvas = document.getElementById('canvas'); canvas.classList.add('canvas-fade');
+      const canvas = document.getElementById('canvas');
+      canvas.style.opacity = 0;
       setTimeout(async () => {
         if(viewName==='overview') await renderOverview();
         if(viewName==='users') await renderUsers();
         if(viewName==='issues') await renderIssues();
         if(viewName==='notices') await renderNotices();
-        canvas.classList.remove('canvas-fade'); attachHover();
-      }, 400);
+        if(viewName==='blueprint') await renderBlueprint();
+        canvas.style.opacity = 1;
+      }, 300);
     }
 
     // 1. Overview
     async function renderOverview() {
-      let html = `<div class="hero-panel"><div><p style="font-family:var(--font-display); font-weight:700; text-transform:uppercase;">Central Command</p><h1 class="text-mega">ROOT</h1></div></div>`;
+      let html = `<div class="hero-panel"><div><p style="font-weight:600; text-transform:uppercase; opacity:0.5; margin-bottom:10px;">Central Command</p><h1 class="text-headline" style="font-size:3rem;">Root Dashboard</h1></div></div>`;
       html += `<div class="grid-masonry" style="padding:0;">
-        <div class="poster-card poster-dark"><div class="poster-huge-bg">SEC</div><div class="poster-header"><h3 class="poster-title">System Metrics</h3></div>
+        <div class="poster-card poster-dark"><div class="poster-header"><h3 class="poster-title">System Metrics</h3></div>
           <div class="poster-content" style="display:flex; flex-wrap:wrap; gap:20px;">
-             <div style="flex:1;"><div class="text-headline" style="font-size:4rem;">${allUsers.length}</div><div>Total Users</div></div>
-             <div style="flex:1;"><div class="text-headline" style="font-size:4rem;color:var(--accent);">Active</div><div>Status</div></div>
+             <div style="flex:1;"><div class="text-headline" style="font-size:4rem;">${allUsers.length}</div><div style="opacity:0.6;">Total Users</div></div>
+             <div style="flex:1;"><div class="text-headline" style="font-size:4rem;color:var(--neon-green);">Active</div><div style="opacity:0.6;">Status</div></div>
           </div>
         </div>
       </div>`;
@@ -131,10 +141,10 @@
     async function renderUsers() {
       try {
          const r = await fetch(`${API}/users`); const users = await r.json();
-         let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card poster-blue" style="grid-column:1/-1;">
-            <div class="poster-huge-bg">USERS</div><div class="poster-header"><h3 class="poster-title text-headline">Registry</h3><button class="poster-icon" style="border-radius:100px; width:auto; padding:0 20px; font-size:1rem;" onclick="openModal('modal-user')">+ Create User</button></div>
-            <div class="poster-content" style="column-count:2; column-gap:40px;">`;
-         users.forEach(u => { html += `<div class="fluid-row" style="border-bottom-color:rgba(255,255,255,0.2);"><span class="fluid-row-label">${u.name} <br><span style="opacity:0.6;font-size:0.8rem;">${u.email}</span></span><span class="poster-pill" style="border-color:rgba(255,255,255,0.3); color:#fff; align-self:center;">${u.role.toUpperCase()}</span></div>`; });
+         let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card poster-blue" style="grid-column:1/-1; padding:40px;">
+            <div class="poster-header"><h3 class="poster-title text-headline">Registry</h3><button class="nav-pill" style="background:var(--white); color:var(--black);" onclick="openModal('modal-user')">+ Create User</button></div>
+            <div class="poster-content" style="column-count:2; column-gap:40px; margin-top:30px;">`;
+         users.forEach(u => { html += `<div class="fluid-row" style="border-bottom-color:rgba(255,255,255,0.2);"><span class="fluid-row-label">${u.name} <br><span style="opacity:0.8;font-size:0.8rem;">${u.email}</span></span><span class="badge" style="background:var(--black); color:#fff; align-self:center;">${u.role.toUpperCase()}</span></div>`; });
          html += `</div></div></div>`; document.getElementById('canvas').innerHTML = html;
       } catch(e) {}
     }
@@ -150,9 +160,9 @@
       try {
          const r = await fetch(`${API}/issues`); allIssues = await r.json(); const issues = allIssues;
          let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card" style="grid-column:1/-1;">
-            <div class="poster-huge-bg" style="opacity:0.04;">TICKETS</div><div class="poster-header"><h3 class="poster-title text-headline">Live Dispatch</h3></div>
-            <div class="poster-content">`;
-         issues.forEach(i => { html += `<div class="fluid-row" onclick='editIssue(${JSON.stringify(i)})' style="cursor:pointer;"><div style="display:flex; flex-direction:column;"><span class="fluid-row-val">${i.title} (${i.category})</span><span style="opacity:0.6;">By ${i.student_name} · Loc: ${i.location}</span></div><span class="poster-pill" style="border-color:var(--black); color:${i.status==='resolved'?'green':'var(--accent)'};">${i.status.toUpperCase()}</span></div>`; });
+            <div class="poster-header"><h3 class="poster-title text-headline">Live Dispatch</h3></div>
+            <div class="poster-content" style="margin-top:30px;">`;
+         issues.forEach(i => { html += `<div class="fluid-row" onclick='editIssue(${JSON.stringify(i)})' style="cursor:pointer;"><div style="display:flex; flex-direction:column; gap:5px;"><span class="fluid-row-val">${i.title} (${i.category})</span><span class="fluid-row-label">By ${i.student_name} · Loc: ${i.location}</span></div><span class="badge" style="${i.status==='resolved'?'background:var(--neon-green);':'background:var(--purple); color:var(--white);'}">${i.status.toUpperCase()}</span></div>`; });
          html += `</div></div></div>`; document.getElementById('canvas').innerHTML = html;
       } catch(e) {}
     }
@@ -202,61 +212,95 @@
            const u = { status: document.getElementById('ie-status').value, assigned_worker_id };
            const id = document.getElementById('ie-id').value;
            const r = await fetch(`${API}/issues/${id}/status`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(u) });
-           if(r.ok){ closeModal('modal-issue-edit'); switchView('issues'); alert('Dispatched Successfully.'); }
+           if(r.ok){ closeModal('modal-issue-edit'); switchView('issues'); }
            btn.style.display = 'block'; loader.style.display = 'none';
-       }, 1500);
+       }, 500);
     }
 
     // 4. Notices
     async function renderNotices() {
-      let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card poster-dark" style="grid-column:1/-1;">
-         <div class="poster-huge-bg">BROADCAST</div><h2 class="text-headline">NEW BROADCAST</h2>
-         <div style="margin-top:40px; position:relative; z-index:2;">
-           <input id="n-title" type="text" placeholder="Subject" class="form-input" style="color:var(--white); border-bottom-color:var(--white);">
-           <input id="n-content" type="text" placeholder="Detailed Body" class="form-input" style="color:var(--white); border-bottom-color:var(--white);">
-           <select id="n-role" class="form-input" style="color:var(--white); background:transparent;"><option style="color:#000" value="*">All Users</option><option style="color:#000" value="student">Students Only</option><option style="color:#000" value="faculty">Faculty Only</option></select>
-           <button class="massive-btn" style="background:var(--white); color:var(--black);" onclick="submitNotice()">Broadcast Message</button>
+      let html = `<div class="grid-masonry" style="padding:0;"><div class="poster-card poster-green" style="grid-column:1/-1; padding:40px;">
+         <h2 class="text-headline">NEW BROADCAST</h2>
+         <div style="margin-top:30px; max-width:600px;">
+           <input id="n-title" type="text" placeholder="Subject" class="form-input" style="background:var(--white);">
+           <input id="n-content" type="text" placeholder="Detailed Body" class="form-input" style="background:var(--white);">
+           <select id="n-role" class="form-input" style="background:var(--white);"><option value="*">All Users</option><option value="student">Students Only</option><option value="faculty">Faculty Only</option></select>
+           <button class="massive-btn" style="background:var(--black); color:var(--white);" onclick="submitNotice()">Broadcast Message</button>
          </div>
       </div></div>`;
-      document.getElementById('canvas').innerHTML = html; attachHover();
+      document.getElementById('canvas').innerHTML = html;
     }
     
     async function submitNotice() {
        const body = { title:document.getElementById('n-title').value, content:document.getElementById('n-content').value, target_role:document.getElementById('n-role').value, created_by:session.user_id };
        const r = await fetch(`${API}/notices`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-       if(r.ok){ switchView('overview'); alert('Notice Posted'); }
+       if(r.ok){ switchView('overview'); }
     }
-  </script>
+
+    // 5. Blueprint
+    async function renderBlueprint() {
+      let html = `<div class="grid-masonry" style="padding:0;">
+        <div class="poster-card poster-dark" style="grid-column:1/-1; padding:40px;">
+           <h2 class="text-headline">CAMPUS BLUEPRINT</h2>
+           <p style="opacity:0.6; margin-top:10px;">Upload a campus map image. It will be broadcasted to all students, faculty, and workers.</p>
+           
+           <div style="margin-top:30px; margin-bottom:30px; display:flex; gap:10px;">
+             <input type="file" id="bp-upload" accept="image/*" class="form-input" style="background:var(--white); border:none; padding:10px;">
+             <button class="massive-btn" style="background:var(--neon-green); color:var(--black); width:auto; padding:10px 40px;" onclick="uploadBlueprint()">Publish Map &rarr;</button>
+           </div>
+           
+           <div id="bp-preview" style="background:rgba(255,255,255,0.05); border-radius:var(--radius-lg); padding:20px; text-align:center;">
+              <span style="opacity:0.5;">Loading Current Blueprint...</span>
+           </div>
+        </div>
+      </div>`;
+      document.getElementById('canvas').innerHTML = html;
+      
+      const r = await fetch(`${API}/settings/blueprint`);
+      const data = await r.json();
+      if(data.blueprint) {
+         document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg); border: 2px solid rgba(255,255,255,0.1);">`;
+      } else {
+         document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.5;">No blueprint currently published.</span>`;
+      }
+    }
+
+    async function uploadBlueprint() {
+       const fileInput = document.getElementById('bp-upload');
+       if(!fileInput.files || !fileInput.files[0]) { alert("Please select an image first."); return; }
+       
+       const file = fileInput.files[0];
+       const reader = new FileReader();
+       document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.5;">Publishing Data...</span>`;
+       
+       reader.onloadend = async () => {
+           const base64Str = reader.result;
+           const r = await fetch(`${API}/settings/blueprint`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({blueprint: base64Str}) });
+           if(r.ok) { alert("Campus Blueprint Published! All terminals synced."); renderBlueprint(); }
+           else { const d=await r.json(); alert("Error: "+d.error); }
+       };
+       reader.readAsDataURL(file);
+    }
   </script>
 
   <!-- Settings Modal -->
   <div class="module-modal" id="modal-settings">
-    <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
-    <div class="container" style="max-width:600px; padding-top:40px; margin:0 auto;">
-      <h2 class="text-headline" style="margin-bottom:40px;">SYSTEM SETTINGS</h2>
-      <div class="poster-card poster-dark" style="min-height: auto;">
-         <div class="setting-row">
-            <span class="setting-label">Language / भाषा</span>
-            <select class="form-input lang-selector" style="width:200px; margin:0; border-bottom-color:var(--white); color:var(--white); background:transparent;">
-               <option style="color:#000;" value="en">English</option>
-               <option style="color:#000;" value="hi">Hindi / हिंदी</option>
-               <option style="color:#000;" value="ml">Malayalam / മലയാളം</option>
-               <option style="color:#000;" value="te">Telugu / తెలుగు</option>
-               <option style="color:#000;" value="bn">Bengali / বাংলা</option>
-               <option style="color:#000;" value="gu">Gujarati / ગુજરાતી</option>
-            </select>
-         </div>
-         <div class="setting-row">
-            <span class="setting-label">Accessibility</span>
-            <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="document.body.classList.toggle('color-blind');">Toggle High Contrast</button>
-         </div>
-         <div class="setting-row" style="border-bottom:none; display:flex; flex-direction:column; align-items:flex-start; gap:10px;">
-            <span class="setting-label">External Integrations</span>
-            <div style="display:flex; gap:10px; width:100%;">
-                <input type="email" id="link-g-email" class="form-input" style="color:var(--white); border-bottom-color:var(--white); margin:0; flex:1;" placeholder="Link Google Email">
-                <button class="nav-pill" style="border-color:var(--white); color:var(--white);" onclick="linkGoogleAccount()">Bind Account</button>
-            </div>
-         </div>
+    <div class="modal-content">
+      <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
+      <h2 class="text-headline" style="margin-bottom:30px;">SYSTEM SETTINGS</h2>
+      <div class="setting-row">
+        <span class="setting-label">Language / भाषा</span>
+        <select class="form-input" style="width:200px; margin:0;" id="lang-selector">
+           <option value="en">English</option>
+           <option value="hi">Hindi / हिंदी</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">External Integrations</span>
+        <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
+            <input type="email" id="link-g-email" class="form-input" style="margin:0; flex:1;" placeholder="Google Email">
+            <button class="nav-pill" style="border-radius:var(--radius-lg);" onclick="linkGoogleAccount()">Bind Account</button>
+        </div>
       </div>
     </div>
   </div>

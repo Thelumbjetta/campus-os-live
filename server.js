@@ -397,6 +397,21 @@ app.post('/api/geofence', (req,res) => {
     });
 });
 
+// ══ SYSTEM SETTINGS ═══════════════════════════════════
+app.get('/api/settings/blueprint', (req, res) => {
+    db.get(`SELECT setting_value FROM system_settings WHERE setting_key = 'blueprint'`, [], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ blueprint: row ? row.setting_value : null });
+    });
+});
+app.post('/api/settings/blueprint', (req, res) => {
+    const { blueprint } = req.body;
+    db.run(`INSERT OR REPLACE INTO system_settings (setting_key, setting_value) VALUES ('blueprint', ?)`, [blueprint], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`\n🎓 Smart Campus Assistant`);
     console.log(`   Server: http://localhost:${PORT}`);
