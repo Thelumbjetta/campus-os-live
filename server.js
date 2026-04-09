@@ -10,6 +10,46 @@ app.use(cors());
 app.use(express.json({ limit: '20mb' })); // Large limit for base64 images
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(__dirname));
+const fs = require('fs');
+const nodemailer = require('nodemailer');
+
+// ══ AUTOMATED DATA BACKUPS ═════════════════════════════
+const backupDir = path.join(__dirname, 'backups');
+if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir);
+
+function runDailyBackup() {
+    const dbFile = path.join(__dirname, 'campus.sqlite');
+    if (!fs.existsSync(dbFile)) return;
+    const dateStr = new Date().toISOString().split('T')[0];
+    const backupFile = path.join(backupDir, `campus_backup_${dateStr}_${Date.now()}.sqlite`);
+    fs.copyFile(dbFile, backupFile, (err) => {
+        if (err) console.error('Backup failed:', err);
+        else console.log('✅ Daily Database Backup successful:', backupFile);
+    });
+}
+// Run backup soon after boot, then every 24 hours
+setTimeout(runDailyBackup, 5000);
+setInterval(runDailyBackup, 86400000);
+
+// ══ EMAIL SYSTEM NOTIFICATIONS ═════════════════════════
+global.transporter = null;
+nodemailer.createTestAccount().then(account => {
+    global.transporter = nodemailer.createTransport({
+        host: account.smtp.host,
+        port: account.smtp.port,
+        secure: account.smtp.secure,
+        auth: { user: account.user, pass: account.pass }
+    });
+    console.log('📧 Ethereal Email Ready. Previews will be logged.');
+}).catch(console.error);
+
+global.sendSystemEmail = function(to, subject, text, html) {
+    if (!global.transporter) return console.log('Email Transporter not ready.');
+    global.transporter.sendMail({ from: '"Campus OS" <system@campus.edu>', to, subject, text, html }, (err, info) => {
+        if (err) console.error('Email Error:', err);
+        else console.log(`📩 Mails sent to ${to}! View preview: ${nodemailer.getTestMessageUrl(info)}`);
+    });
+}
 
 // ══ REAL-TIME NOTIFICATIONS (SSE) ═════════════════════
 const clients = new Set();
@@ -42,6 +82,22 @@ function isStrongPassword(password) {
 }
 
 // ══ AUTH ══════════════════════════════════════════════
+app.post('/api/users', (req, res) => {
+    const { name, email, password, role } = req.body;
+    db.run(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`,
+        [name, email, password, role], function(err) {
+            if (err) return res.status(400).json({ error: err.message });
+            const userId = this.lastID;
+            
+            // Email the user their credentials
+            const mailText = `Welcome to Campus OS, ${name}!\n\nYour account has been created.\nEmail: ${email}\nPassword: ${password}\n\nPlease log in and change your password immediately.`;
+            const mailHtml = `<h3>Welcome to Campus OS, ${name}!</h3><p>Your account has been created.</p><p><b>Email:</b> ${email}<br><b>Password:</b> ${password}</p><p>Please log in and change your password immediately.</p>`;
+            if (global.sendSystemEmail) global.sendSystemEmail(email, "Your Campus OS Account Details", mailText, mailHtml);
+
+            res.json({ user_id: userId, message: "User created" });
+    });
+});
+
 app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
@@ -91,12 +147,7 @@ app.get('/api/users', (req, res) => {
         if(err) return res.status(500).json({error:err.message}); res.json(rows);
     });
 });
-app.post('/api/users', (req,res) => {
-    const{name,email,password,role}=req.body;
-    db.run(`INSERT INTO users(name,email,password,role)VALUES(?,?,?,?)`,[name,email,password,role],function(err){
-        if(err) return res.status(400).json({error:err.message}); res.json({user_id:this.lastID});
-    });
-});
+
 app.put('/api/users/:id', (req,res) => {
     const{name,email,role}=req.body;
     db.run(`UPDATE users SET name=?,email=?,role=? WHERE user_id=?`,[name,email,role,req.params.id],function(err){
@@ -308,6 +359,17 @@ app.post('/api/notices', (req,res) => {
         [title,content,target_role||'all',poster,valid_until||null,image_data||null],function(err){
             if(err) return res.status(400).json({error:err.message}); 
             broadcast('notice', target_role||'all', { title, message: content, action: 'refresh_notices' });
+            
+            // Trigger Email Protocol
+            const sql = target_role && target_role !== 'all' ? `SELECT email FROM users WHERE role = ?` : `SELECT email FROM users`;
+            const params = target_role && target_role !== 'all' ? [target_role] : [];
+            db.all(sql, params, (e, users) => {
+                if (!e && users && users.length) {
+                    const emails = users.map(u => u.email).join(', ');
+                    if (global.sendSystemEmail) global.sendSystemEmail(emails, `New Announcement: ${title}`, content, `<h3>${title}</h3><p>${content}</p>`);
+                }
+            });
+            
             res.json({notice_id:this.lastID});
         });
 });
