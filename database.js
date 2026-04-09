@@ -220,17 +220,17 @@ function initSchema() {
 
             const uStmt = db.prepare(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`);
             uStmt.run("Admin Singh",      "admin@campus.edu",   "Admin@123",   "admin");
-            uStmt.run("Priya Sharma",     "student@campus.edu", "Student@123", "student");
+            uStmt.run("Mehul Krishna",    "student@campus.edu", "Student@123", "student");
             uStmt.run("Dr. Ramesh Nair",  "faculty@campus.edu", "Faculty@123", "faculty");
             uStmt.run("Suresh Kumar",     "worker@campus.edu",  "Worker@123",  "worker");
-            uStmt.run("Raju Verma",       "guard@campus.edu",   "Guard@123",   "guard");
+            uStmt.run("Kamleshbhai",      "guard@campus.edu",   "Guard@123",   "guard");
             uStmt.finalize();
 
             const sStmt = db.prepare(`INSERT INTO students (name, department, year, program, user_id) VALUES (?, ?, ?, ?, ?)`);
-            sStmt.run("Priya Sharma",  "Computer Science", 2, "B.Tech", 2);
-            sStmt.run("Arjun Mehta",   "Electronics",      3, "B.Tech", null);
-            sStmt.run("Kavya Reddy",   "Mechanical",       1, "B.Tech", null);
-            sStmt.run("Nikhil Das",    "Computer Science", 2, "B.Tech", null);
+            sStmt.run("Mehul Krishna", "Computer Science", 2, "B.Tech", 2);
+            sStmt.run("Anjan Prasad",  "Electronics",      3, "B.Tech", null);
+            sStmt.run("Yuvaraju",      "Mechanical",       1, "B.Tech", null);
+            sStmt.run("Rohith",        "Computer Science", 2, "B.Tech", null);
             sStmt.run("Sneha Pillai",  "Civil",            4, "B.Tech", null);
             sStmt.finalize();
 
@@ -247,14 +247,14 @@ function initSchema() {
             wStmt.finalize();
 
             const gStmt = db.prepare(`INSERT INTO guards (name, badge_no, user_id) VALUES (?, ?, ?)`);
-            gStmt.run("Raju Verma", "GRD-001", 5);
-            gStmt.run("Dinesh Rao", "GRD-002", null);
+            gStmt.run("Kamleshbhai", "GRD-001", 5);
+            gStmt.run("Abhay",       "GRD-002", null);
             gStmt.finalize();
 
             const cStmt = db.prepare(`INSERT INTO courses (course_code, course_name, department, credits) VALUES (?, ?, ?, ?)`);
-            cStmt.run("CS301", "Data Structures & Algorithms", "Computer Science", 4);
-            cStmt.run("CS302", "Database Management Systems",   "Computer Science", 3);
-            cStmt.run("CS303", "Operating Systems",             "Computer Science", 4);
+            cStmt.run("CS202", "Software Engineering",          "Computer Science", 4);
+            cStmt.run("CS204", "DBMS",                          "Computer Science", 3);
+            cStmt.run("CS206", "System Software",               "Computer Science", 4);
             cStmt.run("MA201", "Engineering Mathematics III",   "Mathematics",      3);
             cStmt.run("EC301", "Signals & Systems",             "Electronics",      3);
             cStmt.finalize();
@@ -320,7 +320,7 @@ function initSchema() {
             const irStmt = db.prepare(`INSERT INTO issue_reports (student_id, title, description, location, category, severity, status, assigned_role, assigned_id, assigned_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
             irStmt.run(1,"Cooler Not Working in LH-101","The ceiling cooler in Lecture Hall 101 has been non-functional for 2 days. Extremely hot during afternoon lectures.","LH-101, Academic Block","maintenance","high","assigned","worker",1,"Suresh Kumar");
             irStmt.run(2,"Broken Window — Hostel Block E","Window pane near staircase in Hostel Block E is cracked and poses a safety risk.","Hostel Block E, 2nd Floor","maintenance","medium","pending",null,null,null);
-            irStmt.run(3,"Fight Near Cafeteria","Two students involved in a physical altercation near the cafeteria entrance. Required immediate intervention.","Cafeteria, Block F","security","critical","resolved","guard",1,"Raju Verma");
+            irStmt.run(3,"Fight Near Cafeteria","Two students involved in a physical altercation near the cafeteria entrance. Required immediate intervention.","Cafeteria, Block F","security","critical","resolved","guard",1,"Kamleshbhai");
             irStmt.finalize();
 
             /* Seed sample public queries */

@@ -11,6 +11,36 @@ app.use(express.json({ limit: '20mb' })); // Large limit for base64 images
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.static(__dirname));
 
+// ══ REAL-TIME NOTIFICATIONS (SSE) ═════════════════════
+const clients = new Set();
+app.get('/api/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    res.write('data: {"event":"connected"}\n\n');
+    
+    const client = { id: Date.now(), res, role: req.query.role || 'all', user_id: req.query.user_id };
+    clients.add(client);
+    
+    req.on('close', () => {
+        clients.delete(client);
+    });
+});
+
+function broadcast(event, target_role, data) {
+    const payload = `data: ${JSON.stringify({ event, ...data })}\n\n`;
+    for (const client of clients) {
+        if (target_role === 'all' || client.role === target_role || client.role === 'admin' || target_role === 'toast') {
+            client.res.write(payload);
+        }
+    }
+}
+
+function isStrongPassword(password) {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(password);
+}
+
 // ══ AUTH ══════════════════════════════════════════════
 app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
@@ -190,7 +220,7 @@ app.delete('/api/timetable/:id', (req,res) => {
 app.put('/api/auth/change-password', (req,res) => {
     const{user_id, old_password, new_password}=req.body;
     if(!user_id||!old_password||!new_password) return res.status(400).json({error:'user_id, old_password and new_password required'});
-    if(new_password.length < 6) return res.status(400).json({error:'New password must be at least 6 characters'});
+    if(!isStrongPassword(new_password)) return res.status(400).json({error:'Password must be 8+ chars and contain upper, lower, number, and special character.'});
     db.get(`SELECT * FROM users WHERE user_id=? AND password=?`,[user_id,old_password],(err,user)=>{
         if(err) return res.status(500).json({error:err.message});
         if(!user) return res.status(401).json({error:'Current password is incorrect'});
@@ -203,7 +233,7 @@ app.put('/api/auth/change-password', (req,res) => {
 // Admin force-reset: set any user's password without needing old one
 app.put('/api/users/:id/reset-password', (req,res) => {
     const{new_password}=req.body;
-    if(!new_password||new_password.length<6) return res.status(400).json({error:'New password must be at least 6 characters'});
+    if(!isStrongPassword(new_password)) return res.status(400).json({error:'Password must be 8+ chars and contain upper, lower, number, and special character.'});
     db.run(`UPDATE users SET password=? WHERE user_id=?`,[new_password,req.params.id],function(err){
         if(err) return res.status(400).json({error:err.message});
         if(this.changes===0) return res.status(404).json({error:'User not found'});
@@ -276,7 +306,9 @@ app.post('/api/notices', (req,res) => {
     const poster = posted_by || created_by;
     db.run(`INSERT INTO notices(title,content,target_role,posted_by,valid_until,image_data)VALUES(?,?,?,?,?,?)`,
         [title,content,target_role||'all',poster,valid_until||null,image_data||null],function(err){
-            if(err) return res.status(400).json({error:err.message}); res.json({notice_id:this.lastID});
+            if(err) return res.status(400).json({error:err.message}); 
+            broadcast('notice', target_role||'all', { title, message: content, action: 'refresh_notices' });
+            res.json({notice_id:this.lastID});
         });
 });
 app.delete('/api/notices/:id', (req,res) => {
@@ -356,7 +388,9 @@ app.get('/api/security-alerts', (req,res) => {
 app.post('/api/security-alerts', (req,res) => {
     const{alert_type,location,details,severity}=req.body;
     db.run(`INSERT INTO security_alerts(alert_type,location,details,severity)VALUES(?,?,?,?)`,[alert_type,location,details,severity],function(err){
-        if(err) return res.status(400).json({error:err.message}); res.json({alert_id:this.lastID});
+        if(err) return res.status(400).json({error:err.message}); 
+        broadcast('alert', 'all', { title: 'Security Alert: ' + alert_type, message: location, severity, action: 'refresh_alerts' });
+        res.json({alert_id:this.lastID});
     });
 });
 app.put('/api/security-alerts/:id/resolve', (req,res) => {
@@ -397,7 +431,11 @@ app.post('/api/issues', (req,res) => {
     if(!title||!description||!location) return res.status(400).json({error:'Title, description and location required'});
     db.run(`INSERT INTO issue_reports(student_id,title,description,location,category,severity,image_data)VALUES(?,?,?,?,?,?,?)`,
         [student_id,title,description,location,category||'maintenance',severity||'medium',image_data||null],
-        function(err){ if(err) return res.status(400).json({error:err.message}); res.json({report_id:this.lastID}); });
+        function(err){ 
+            if(err) return res.status(400).json({error:err.message}); 
+            broadcast('issue', 'admin', { title: 'New Issue: ' + title, message: location, action: 'refresh_issues' });
+            res.json({report_id:this.lastID}); 
+        });
 });
 
 app.put('/api/issues/:id/assign', (req,res) => {
@@ -519,7 +557,9 @@ app.post('/api/security-alerts', (req,res) => {
     const{alert_type,location,details,severity}=req.body;
     db.run(`INSERT INTO security_alerts(alert_type,location,details,severity)VALUES(?,?,?,?)`,
         [alert_type,location,details,severity||'medium'],function(err){
-            if(err) return res.status(400).json({error:err.message}); res.json({alert_id:this.lastID});
+            if(err) return res.status(400).json({error:err.message}); 
+            broadcast('alert', 'all', { title: 'Security Alert: ' + alert_type, message: location, severity: severity||'medium', action: 'refresh_alerts' });
+            res.json({alert_id:this.lastID});
         });
 });
 app.put('/api/security-alerts/:id/resolve', (req,res) => {

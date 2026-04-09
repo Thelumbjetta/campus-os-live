@@ -280,6 +280,25 @@
       if(data.blueprint) document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg);">`;
       else document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.5;">Campus map not published.</span>`;
     }
+    async function changePassword() {
+      const old_password = document.getElementById('pw-old').value;
+      const new_password = document.getElementById('pw-new').value;
+      const confirm      = document.getElementById('pw-confirm').value;
+      const msg          = document.getElementById('pw-msg');
+      msg.style.display  = 'block';
+      if (!old_password || !new_password) { msg.style.color='#EF476F'; msg.textContent='Fill in all fields.'; return; }
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(new_password)) { msg.style.color='#EF476F'; msg.textContent='Must be 8+ chars, upper, lower, num, special.'; return; }
+      if (new_password !== confirm)       { msg.style.color='#EF476F'; msg.textContent='Passwords do not match.'; return; }
+      const r = await fetch('/api/auth/change-password', { method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ user_id: session.user_id, old_password, new_password }) });
+      const d = await r.json();
+      if(r.ok) {
+        msg.style.color='green'; msg.textContent='Password updated.';
+        document.getElementById('pw-old').value=''; document.getElementById('pw-new').value=''; document.getElementById('pw-confirm').value='';
+      } else {
+        msg.style.color='#EF476F'; msg.textContent = d.error || 'Update failed.';
+      }
+    }
   </script>
 
   <!-- Settings Modal -->
@@ -287,6 +306,15 @@
     <div class="modal-content">
       <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
       <h2 class="text-headline" style="margin-bottom:30px;">SYSTEM SETTINGS</h2>
+      <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:12px;">
+        <span class="setting-label">🔑 Change Password</span>
+        <input type="password" id="pw-old" class="form-input" style="margin:0;" placeholder="Current Password">
+        <input type="password" id="pw-new" class="form-input" style="margin:0;" placeholder="New Password (8+ chars, upper, lower, num, special)">
+        <input type="password" id="pw-confirm" class="form-input" style="margin:0;" placeholder="Confirm New Password">
+        <div id="pw-msg" style="font-size:0.88rem; font-weight:600; display:none;"></div>
+        <button class="nav-pill" style="background:var(--black); color:white; border:none;" onclick="changePassword()">Update Password</button>
+      </div>
+
       <div class="setting-row">
         <span class="setting-label">External Integrations</span>
         <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
@@ -296,5 +324,6 @@
       </div>
     </div>
   </div>
-</body>
+<script src="campus-os-client.js"></script></body>
 </html>
+

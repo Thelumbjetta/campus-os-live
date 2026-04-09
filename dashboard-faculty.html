@@ -51,6 +51,7 @@
         <button class="filter-btn" data-view="queries" onclick="switchView('queries')">Student Q&A</button>
         <button class="filter-btn" data-view="attendance" onclick="switchView('attendance')">Take Attendance</button>
         <button class="filter-btn" data-view="history" onclick="switchView('history')">Att. History</button>
+        <button class="filter-btn" data-view="notices" onclick="switchView('notices')">Notices</button>
         <button class="filter-btn" data-view="blueprint" onclick="switchView('blueprint')">Campus Map</button>
       </div>
     </div>
@@ -172,6 +173,7 @@
         if(viewName==='queries')     await renderQueries();
         if(viewName==='attendance')  await renderAttendance();
         if(viewName==='history')     await renderAttendanceHistory();
+        if(viewName==='notices')     await renderNotices();
         if(viewName==='blueprint')   await renderBlueprint();
         canvas.style.opacity = 1;
       }, 300);
@@ -663,6 +665,105 @@
       if(data.blueprint) document.getElementById('bp-preview').innerHTML = `<img src="${data.blueprint}" style="max-width:100%; border-radius:var(--radius-lg); border:2px solid rgba(0,0,0,0.08);">`;
       else document.getElementById('bp-preview').innerHTML = `<span style="opacity:0.6;">Campus map not published yet.</span>`;
     }
+    // ── 6. NOTICES (FACULTY) ───────────────────────────────────────────────
+    async function renderNotices() {
+      let html = `
+        <div class="poster-card poster-dark" style="padding:40px;">
+          <h2 class="text-headline" style="margin-bottom:8px;">POST NEW NOTICE</h2>
+          <p style="opacity:0.6; margin-bottom:25px;">Broadcast a notice to your students.</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; max-width:700px;">
+            <input id="n-title" type="text" placeholder="Subject / Title" class="form-input" style="grid-column:1/-1;">
+            <textarea id="n-content" class="form-input" placeholder="Detailed notice message..." style="height:100px; resize:vertical; grid-column:1/-1;"></textarea>
+            <select id="n-role" class="form-input" style="margin:0;">
+              <option value="student">Students Only</option>
+              <option value="all">All (Students & Staff)</option>
+            </select>
+            <input type="date" id="n-valid" class="form-input" style="margin:0;" title="Valid Until (optional)">
+          </div>
+          <!-- Image upload -->
+          <div style="margin-top:15px; max-width:700px;">
+            <label style="font-weight:700; font-size:0.85rem; opacity:0.6; text-transform:uppercase; display:block; margin-bottom:8px;">Attach Image (optional)</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="file" id="n-image" accept="image/*" style="flex:1; background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.15); border-radius:var(--radius-lg); padding:10px 15px; color:var(--white); font-size:0.9rem;" onchange="previewNoticeImage()">
+              <button onclick="clearNoticeImage()" style="background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.2); border-radius:var(--radius-pill); color:var(--white); padding:8px 16px; cursor:pointer;">Clear</button>
+            </div>
+            <div id="n-img-preview" style="margin-top:12px; display:none;">
+              <img id="n-img-tag" style="max-height:150px; border-radius:var(--radius-md); border:2px solid rgba(255,255,255,0.2);">
+            </div>
+          </div>
+          <button class="massive-btn" style="background:var(--neon-green); color:var(--black); margin-top:20px; max-width:700px;" onclick="submitNotice()">Publish Notice &rarr;</button>
+        </div>
+        <div class="poster-card" style="padding:40px; margin-top:20px;" id="notice-history">Loading notices...</div>`;
+      document.getElementById('canvas').innerHTML = html;
+      
+      try {
+        const r = await fetch(`${API}/notices?role=all`);
+        const allNotices = await r.json();
+        // filter notices posted by this faculty
+        const userNotices = allNotices.filter(n => n.posted_by === session.user_id);
+        let nh = `<div class="poster-header" style="margin-bottom:20px;">
+          <h3 class="text-headline" style="font-size:1.8rem;">My Broadcast History</h3>
+        </div>`;
+        if (!userNotices.length) nh += `<p style="opacity:0.5;">You haven't posted any notices yet.</p>`;
+        userNotices.forEach(n => {
+          nh += `<div class="fluid-row" style="flex-direction:column; align-items:flex-start; gap:6px; padding:15px 0;">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
+              <div style="flex:1;">
+                <span style="font-weight:700; font-size:1rem;">${n.title}</span>
+                ${n.image_data ? '<span style="font-size:0.8rem; opacity:0.5; margin-left:8px;">📎 Has image</span>' : ''}
+              </div>
+              <div style="display:flex;gap:8px; margin-left:10px;">
+                <span class="badge" style="background:var(--bg-light);">${n.target_role === 'all' ? 'ALL' : n.target_role.toUpperCase()}</span>
+                <button onclick="deleteNotice(${n.notice_id})" style="background:none; border:none; cursor:pointer; opacity:0.4; font-size:1rem;" title="Delete">🗑</button>
+              </div>
+            </div>
+            <span style="opacity:0.6; font-size:0.9rem; line-height:1.5;">${n.content}</span>
+            <span style="font-size:0.78rem; opacity:0.4;">${new Date(n.date_posted).toLocaleString()}</span>
+          </div>`;
+        });
+        document.getElementById('notice-history').innerHTML = nh;
+      } catch(e) {}
+    }
+    
+    function previewNoticeImage() {
+      const file = document.getElementById('n-image').files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        document.getElementById('n-img-tag').src = reader.result;
+        document.getElementById('n-img-preview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+    function clearNoticeImage() {
+      document.getElementById('n-image').value = '';
+      document.getElementById('n-img-preview').style.display = 'none';
+      document.getElementById('n-img-tag').src = '';
+    }
+    async function submitNotice() {
+       const title   = document.getElementById('n-title').value.trim();
+       const content = document.getElementById('n-content').value.trim();
+       if(!title || !content) return alert('Fill in the subject and message.');
+       const target_role = document.getElementById('n-role').value;
+       const valid_until = document.getElementById('n-valid')?.value || null;
+       let image_data = null;
+       const imgFile = document.getElementById('n-image')?.files?.[0];
+       if (imgFile) {
+         image_data = await new Promise(resolve => {
+           const r2 = new FileReader();
+           r2.onloadend = () => resolve(r2.result);
+           r2.readAsDataURL(imgFile);
+         });
+       }
+       const r = await fetch(`${API}/notices`, { method:'POST', headers:{'Content-Type':'application/json'},
+         body: JSON.stringify({ title, content, target_role, valid_until, image_data, posted_by: session.user_id }) });
+       if(r.ok){ renderNotices(); }
+    }
+    async function deleteNotice(id) {
+      if (!confirm('Delete this broadcast?')) return;
+      await fetch(`${API}/notices/${id}`, { method:'DELETE' });
+      renderNotices();
+    }
   </script>
 
   <!-- Settings Modal -->
@@ -671,17 +772,12 @@
       <button class="close-btn" onclick="document.getElementById('modal-settings').classList.remove('open')">✕</button>
       <h2 class="text-headline" style="margin-bottom:30px;">SETTINGS</h2>
 
-      <div class="setting-row">
-        <span class="setting-label">Language / भाषा</span>
-        <select class="form-input" style="width:200px; margin:0;" id="lang-selector">
-           <option value="en">English</option><option value="hi">Hindi / हिंदी</option>
-        </select>
-      </div>
+
 
       <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:12px;">
         <span class="setting-label">🔑 Change Password</span>
         <input type="password" id="pw-old" class="form-input" style="margin:0;" placeholder="Current Password">
-        <input type="password" id="pw-new" class="form-input" style="margin:0;" placeholder="New Password (min 6 characters)">
+        <input type="password" id="pw-new" class="form-input" style="margin:0;" placeholder="New Password (8+ chars, upper, lower, num, special)">
         <input type="password" id="pw-confirm" class="form-input" style="margin:0;" placeholder="Confirm New Password">
         <div id="pw-msg" style="font-size:0.88rem; font-weight:600; display:none;"></div>
         <button class="nav-pill" style="background:var(--black); color:white; border:none;" onclick="changePassword()">Update Password</button>
@@ -705,7 +801,7 @@
       const msg          = document.getElementById('pw-msg');
       msg.style.display = 'block';
       if (!old_password || !new_password) { msg.style.color='#EF476F'; msg.textContent='Please fill in all fields.'; return; }
-      if (new_password.length < 6)        { msg.style.color='#EF476F'; msg.textContent='New password must be at least 6 characters.'; return; }
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(new_password)) { msg.style.color='#EF476F'; msg.textContent='Must be 8+ chars, upper, lower, num, special.'; return; }
       if (new_password !== confirm)        { msg.style.color='#EF476F'; msg.textContent='Passwords do not match.'; return; }
       const r = await fetch('/api/auth/change-password', { method:'PUT', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ user_id: session.user_id, old_password, new_password }) });
@@ -720,5 +816,6 @@
       }
     }
   </script>
-</body>
+<script src="campus-os-client.js"></script></body>
 </html>
+
