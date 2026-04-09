@@ -32,22 +32,20 @@ setTimeout(runDailyBackup, 5000);
 setInterval(runDailyBackup, 86400000);
 
 // ══ EMAIL SYSTEM NOTIFICATIONS ═════════════════════════
-global.transporter = null;
-nodemailer.createTestAccount().then(account => {
-    global.transporter = nodemailer.createTransport({
-        host: account.smtp.host,
-        port: account.smtp.port,
-        secure: account.smtp.secure,
-        auth: { user: account.user, pass: account.pass }
-    });
-    console.log('📧 Ethereal Email Ready. Previews will be logged.');
-}).catch(console.error);
+global.transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'nrshabi123@gmail.com',
+        pass: 'nwsb qbfp fnqq rvim'
+    }
+});
+console.log('📧 Gmail SMTP Ready. Live emails will be distributed.');
 
 global.sendSystemEmail = function(to, subject, text, html) {
     if (!global.transporter) return console.log('Email Transporter not ready.');
-    global.transporter.sendMail({ from: '"Campus OS" <system@campus.edu>', to, subject, text, html }, (err, info) => {
+    global.transporter.sendMail({ from: '"Campus OS" <nrshabi123@gmail.com>', to, subject, text, html }, (err, info) => {
         if (err) console.error('Email Error:', err);
-        else console.log(`📩 Mails sent to ${to}! View preview: ${nodemailer.getTestMessageUrl(info)}`);
+        else console.log(`📩 Mails sent successfully to ${to}!`);
     });
 }
 

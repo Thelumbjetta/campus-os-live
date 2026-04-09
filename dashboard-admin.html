@@ -405,7 +405,6 @@
       const msg         = document.getElementById('rp-msg');
       msg.style.display = 'block';
       if (!new_password)              { msg.style.color='#EF476F'; msg.textContent='Enter a new password.'; return; }
-      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(new_password))    { msg.style.color='#EF476F'; msg.textContent='Must be 8+ chars, upper, lower, num, special.'; return; }
       if (new_password !== confirm)   { msg.style.color='#EF476F'; msg.textContent='Passwords do not match.'; return; }
       const r = await fetch(`${API}/users/${userId}/reset-password`, {
         method:'PUT', headers:{'Content-Type':'application/json'},
